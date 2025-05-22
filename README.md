@@ -15,11 +15,11 @@ __Tablo2Plex__ is a Node.js-based server app that emulates an HDHomeRun device t
 
 ## Preface
 
-With the Tablo 4th Gen devices, they added an Auth layer to their communications so you can't independently interact with them on your network. You are now forced to use only the offical Tablo 4th Gen apps that are either poorly supported or non existent (see Windows). I wanted to not only fix that but expand the devices it supports while allowing you to take your streams with you wherever you go. That's how __Tablo2Plex__ was born! You can now use your Tablo device on any device that supports Plex, anywhere you go with it!
+With the Tablo 4th Gen devices, they added an Auth layer to their communications so you can't independently interact with them on your network. You are now forced to use only the official Tablo 4th Gen apps that are either poorly supported or non existent (see Windows). I wanted to not only fix that but expand the devices it supports while allowing you to take your streams with you wherever you go. That's how __Tablo2Plex__ was born! You can now use your Tablo device on any device that supports Plex, anywhere you go with it!
 
 How it works:
 
-<img src="./imgs/chart.png" width="700">
+<img src="./imgs/chart.png" width="750">
 
 ## Getting Started
 
@@ -32,7 +32,7 @@ How it works:
 
 ### Installation
 
-It's recommand that __Tablo2Plex__ runs on the same device as your Plex server for best performance. But as long as it's on the same network as both the Plex server and the Tablo device, it will work.
+It's recommended that __Tablo2Plex__ runs on the same device as your Plex server for best performance. But as long as it's on the same network as both the Plex server and the Tablo device, it will work.
 
 If you want to run the proxy a Node package:
 
@@ -85,7 +85,7 @@ Besides the ``.env`` settings, you can run the proxy with a command line to forc
 
 |Command |Desc     |
 | :---    | :---  |
-|``-c, --creds``| Force the app to ask for a login again to create new credentials files (checks eveytime the app runs)|
+|``-c, --creds``| Force the app to ask for a login again to create new credentials files (checks every time the app runs)|
 |``-l, --lineup``| Force the app to pull a new channel line up from the Tablo servers, good if you changed a setting in the ``.env`` file (can be done at anytime while running)|
 
 ### Plex Setup
