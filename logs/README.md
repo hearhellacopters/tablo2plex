@@ -1,0 +1,1 @@
+File logging can be turned on in the .env file

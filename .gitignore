@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+# logs
+logs/*
+!logs/README.md
+# personal files
+package-lock.json
+creds.bin
+schedule.json
+lineup.json
+ffmpeg.exe
+StartUpProcedures.txt
+*.exe
+*.zip
+#test files
+test*
