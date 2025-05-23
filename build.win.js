@@ -12,7 +12,7 @@ const build = exe({
   version: pak.version,
   target: "node20-win-x64",
   icon: "./app.ico", // Application icons must be same size as prebuild target
-  executionLevel: "highestAvailable",
+  //executionLevel: "highestAvailable",
   properties:{
         FileDescription: pak.description,
         ProductName: pak.name,
