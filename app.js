@@ -1123,46 +1123,49 @@ async function cacheGuideData(){
 }
 
 async function parseLineup(){
-    try {
-        /**
-         * @type {channelLineup[]}
-         */
-        const lineupParse = FS.readJSON(LINEUP_FILE);
+    if(LINEUP_DATA == undefined)
+    {
+        try {
+            /**
+             * @type {channelLineup[]}
+             */
+            const lineupParse = FS.readJSON(LINEUP_FILE);
 
-        LINEUP_DATA = {};
+            LINEUP_DATA = {};
 
-        for (let i = 0; i < lineupParse.length; i++) {
-            const el = lineupParse[i];
+            for (let i = 0; i < lineupParse.length; i++) {
+                const el = lineupParse[i];
 
-            if(el.kind == "ota")
-            {
-                LINEUP_DATA[el.identifier] = {
-                    GuideNumber: `${el.ota.major}.${el.ota.minor}`,
-                    GuideName: el.ota.callSign,
-                    URL: `${SERVER_URL}/channel/${el.identifier}`,
-                    type: "ota",
-                    srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
+                if(el.kind == "ota")
+                {
+                    LINEUP_DATA[el.identifier] = {
+                        GuideNumber: `${el.ota.major}.${el.ota.minor}`,
+                        GuideName: el.ota.callSign,
+                        URL: `${SERVER_URL}/channel/${el.identifier}`,
+                        type: "ota",
+                        srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
+                    }
+                }
+                else if (el.kind == "ott")
+                {
+                    LINEUP_DATA[el.identifier] = {
+                        GuideNumber: `${el.ott.major}.${el.ott.minor}`,
+                        GuideName: el.ott.callSign,
+                        URL: `${SERVER_URL}/channel/${el.identifier}`,
+                        type: "ott",
+                        srcURL: el.ott.streamUrl
+                    }
                 }
             }
-            else if (el.kind == "ott")
-            {
-                LINEUP_DATA[el.identifier] = {
-                    GuideNumber: `${el.ott.major}.${el.ott.minor}`,
-                    GuideName: el.ott.callSign,
-                    URL: `${SERVER_URL}/channel/${el.identifier}`,
-                    type: "ott",
-                    srcURL: el.ott.streamUrl
-                }
-            }
+
+            //TODO: personal data
+
+            return 1;
+        } catch (error) {
+            Logger.error("Issue with creating new lineup file.", error);
+
+            return await exit();
         }
-
-        //TODO: personal data
-
-        return 1;
-    } catch (error) {
-        Logger.error("Issue with creating new lineup file.", error);
-
-        return await exit();
     }
 }
 
@@ -1289,6 +1292,8 @@ async function makeLineup(){
             SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
             await SCHEDULE.scheduleNextRun();
+
+            await parseLineup();
         } catch (error) {
             Logger.error("Could not read lineup file. Check permissions and rerun app with --lineup.");
 
