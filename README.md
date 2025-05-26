@@ -61,8 +61,7 @@ Use the ``.env`` file to change options for you would like to use the Tablo devi
 | :---    | :---  |
 |``PORT`` | Change the port the app runs on (default ``8181``)|
 |``LINEUP_UPDATE_INTERVAL``| How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.|
-|``OTT_SETTINGS``| How to handle ott "over-the-top" internet channels that Tablo comes with it that doesn't use the device (ota "over-the-air" channels) to access (read more about it in the [OTT](#ott) section). You can ``remove`` them from the line up, ``include`` them or ``split`` them to a second proxy on a different port (for easier guide population). Default is to ``include`` them in the main proxy (you can also uncheck them from the Plex server guide)|
-|``PORT2``| The second port to use when you want to split out ott channels. Default ``8182`` |
+|``CREATE_XML``| Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
 |``LOG_LEVEL``| The amount of data you would like to see in the console. Default ``error`` and lower|
 |``SAVE_LOG``| Create a file of all console output to the /logs folder. Default ``false``|
 
@@ -83,23 +82,19 @@ It will ask you to select a profile or device if there is more than one on your 
 
 Besides the ``.env`` settings, you can run the proxy with a command line to force some actions: 
 
-|Command |Desc     |
+|Commandline  |Desc     |
 | :---    | :---  |
-|``-c, --creds``| Force the app to ask for a login again to create new credentials files (checks every time the app runs)|
-|``-l, --lineup``| Force the app to pull a new channel line up from the Tablo servers, good if you changed a setting in the ``.env`` file (can be done at anytime while running)|
+|``-c,--creds`` | Force the app to ask for a login again to create new credentials files (checks every time the app runs)|
+|``-l,--lineup``| Force the app to pull a new channel line up from the Tablo servers, good if you changed a setting in the ``.env`` file (can be done at anytime while running)|
 
 ### Plex Setup
 
 1. Open Plex and go to **Live TV & DVR > Setup**
 2. Plex should detect the device proxy automatically, if not you can add the displaying http address and port from the proxy.
-3. Follow the guide scan using a ZIP code*
+3. Follow the guide scan using a ZIP code or use the displaying XML endpoint instead
 4. Start watching live TV via Tablo!
 
-*The 4th Gen Tablo devices no longer populate the channel guide through the device. The Tablo apps connects to a 3rd party that populates it within the Tablo app so it can control the DRV and many other features. In the interest of keeping things simple, I didn't spend the time converting their 3rd party guide data, so you must use the Plex's guide data instead.
-
-## OTT
-
-Tablo comes with ott (over-the-top) internet channels that don't require the device to use. Some of these are likely not normal channels so you can't get the guide information outside of the Tablo app. Instead of spending time and resources having to make the server constantly downloading and converting that guide data, we have a few options for how we can handle this channels. You can either include them in the whole lineup and see if your Plex has the guide data or split them to their own port and have Plex view all these channels are a whole different device (or just not include them). This can be controlled in the ``OTT_SETTINGS`` in the ``.env`` file.
+*The 4th Gen Tablo devices no longer populate the channel guide through the device. The Tablo apps connects to a 3rd party that populates it within the Tablo app so it can control the DRV and many other features. If you are interested in keeping things simple, use the Plex's guide data instead of creating an XML guide yourself.
 
 ---
 

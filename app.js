@@ -2,21 +2,15 @@
 /**
  * @typedef {import('buffer').Buffer} Buffer
  * 
- * @typedef masterCreds
- * @property {string} lighthousetvAuthorization - For lighthousetv transmissions
- * @property {string} lighthousetvIdentifier - For lighthousetv transmissions
- * @property {{identifier:string, name:string, date_joined:string, preferences:object}} profile
- * @property {{serverId:string, name:string, type:string, product:string, version:string, buildNumber:number, registrationStatus:string, lastSeen:string, reachability:string, url:string}} device
- * @property {string} Lighthouse
- * @property {string} UUID
- * @property {number} tuners
- */
+*/
 
 const fs = require('fs');
+const XMLWriter = require('xml-writer');
 const path = require('path');
 const { spawn } = require('child_process');
 const {
     Logger,
+    JSDate,
     Scheduler,
     FS,
     Encryption,
@@ -24,12 +18,11 @@ const {
     C_HEX,
     ARGV,
     PORT,
-    PORT2,
     LINEUP_UPDATE_INTERVAL,
-    OTT_SETTINGS,
+    GUIDE_DAYS,
+    CREATE_XML,
     DIR_NAME,
     SERVER_URL,
-    SERVER_URL2,
 
     makeHTTPSRequest,
     reqTabloDevice,
@@ -44,13 +37,112 @@ const express = require('express');
 const CREDS_FILE = path.join(DIR_NAME, "creds.bin");
 
 /**
+ * @typedef masterCreds
+ * @property {string} lighthousetvAuthorization - For lighthousetv transmissions
+ * @property {string} lighthousetvIdentifier - For lighthousetv transmissions
+ * @property {{identifier:string, name:string, date_joined:string, preferences:object}} profile
+ * @property {{serverId:string, name:string, type:string, product:string, version:string, buildNumber:number, registrationStatus:string, lastSeen:string, reachability:string, url:string}} device
+ * @property {string} Lighthouse
+ * @property {string} UUID
+ * @property {number} tuners
+ */
+
+/**
  * @type {masterCreds}
  */
 var CREDS_DATA;
 
-const SCHEDULE_FILE = path.join(DIR_NAME, "schedule.json");
+const SCHEDULE_LINEUP = path.join(DIR_NAME, "schedule_lineup.json");
+
+/**
+ * @typedef {OtaType | OttType} channelLineup
+ * 
+ * @typedef {Object} OtaType
+ * @property {string} identifier
+ * @property {string} name
+ * @property {"ota"} kind - The kind property must be "ota".
+ * @property {Logos[]} logos
+ * @property {Kind} ota - The ota property with data.
+ * 
+ * @typedef {Object} OttType
+ * @property {string} identifier
+ * @property {string} name
+ * @property {"ott"} kind - The kind property must be "ota".
+ * @property {Logos[]} logos
+ * @property {Kind} ott - The ott property with data.
+ * 
+ * @typedef Logos
+ * @property {string} kind
+ * @property {string} url
+ * 
+ * @typedef Kind
+ * @property {number} major
+ * @property {number} minor
+ * @property {string} callSign
+ * @property {string} network
+ * @property {string} streamUrl
+ * @property {string} provider
+ * @property {boolean} canRecord
+ */
 
 const LINEUP_FILE = path.join(DIR_NAME, "lineup.json");
+
+/**
+ * @typedef {episodeType | sportEventType | movieAiringType} guideInfo
+ * 
+ * @typedef episodeType
+ * @property {string} identifier
+ * @property {string} title
+ * @property {{identifier:string}} channel
+ * @property {string} datetime
+ * @property {string} onnow
+ * @property {string|null} description
+ * @property {"episode"} kind
+ * @property {number} qualifiers
+ * @property {string[]} genres
+ * @property {Images[]} images
+ * @property {number} duration
+ * @property {{identifier:string, title:string, sortTitle:string, sectionTitle:string}} show
+ * @property {{season: {kind:string, number?:number, string?:string}, episodeNumber:number|null, originalAirDate:string|null, rating:string|null}} episode
+ * 
+ * @typedef movieAiringType
+ * @property {string} identifier
+ * @property {string} title
+ * @property {{identifier:string}} channel
+ * @property {string} datetime
+ * @property {string} onnow
+ * @property {string|null} description
+ * @property {"movieAiring"} kind
+ * @property {number} qualifiers
+ * @property {string[]} genres
+ * @property {Images[]} images
+ * @property {number} duration
+ * @property {{identifier:string, title:string, sortTitle:string, sectionTitle:string}} show
+ * @property {{releaseYear:number, filmRating:string|null, qualityRating:number|null }} movieAiring
+ * 
+ * @typedef sportEventType
+ * @property {string} identifier
+ * @property {string} title
+ * @property {{identifier:string}} channel
+ * @property {string} datetime
+ * @property {string} onnow
+ * @property {string|null} description
+ * @property {"sportEvent"} kind
+ * @property {number} qualifiers
+ * @property {string[]} genres
+ * @property {Images[]} images
+ * @property {number} duration
+ * @property {{identifier:string, title:string, sortTitle:string, sectionTitle:string}} show
+ * @property {{season:string|null}} sportEvent
+ * 
+ * @typedef Images
+ * @property {string} kind
+ * @property {string} url
+ */
+
+const SCHEDULE_GUIDE = path.join(DIR_NAME, "schedule_guide.json");
+
+const GUIDE_FILE = path.join(DIR_NAME, "guide.xml");
 
 /**
  * @type {{[key:string]:{GuideNumber:string, GuideName:string, URL:string, type:string, srcURL:string}}}
@@ -73,13 +165,18 @@ var CURRENT_STREAMS = 0;
 var SCHEDULE;
 
 /**
+ * @type {Scheduler}
+ */
+var GUIDE;
+
+/**
  * 
  * @param {express.Request} req 
  * @param {express.Response} res 
  * @param {express.NextFunction} next 
  * @param {string} port
  */
-function _middleware(req, res, next, port){
+async function _middleware(req, res, next, port){
     const ip = req.ip;
 
     const path = req.path;
@@ -90,6 +187,8 @@ function _middleware(req, res, next, port){
     }
 
     next(); // Move to the next middleware or route handler
+
+    return;
 }
 
 /**
@@ -129,19 +228,9 @@ async function _discover(req, res, name, serverURL, DeviceID){
  * 
  * @param {express.Request} req 
  * @param {express.Response} res 
- * @param {string} type
  */
-async function _lineup(req, res, type){
+async function _lineup(req, res){
     var lineup = Object.values(LINEUP_DATA);
-
-    if (type == "exclude")
-    {
-        lineup = lineup.filter((el) => el.type != "ott");
-    }
-    else if (type == "only")
-    {
-        lineup = lineup.filter((el) => el.type == "ott");
-    }
 
     const headers = {
         'Content-Type': 'application/json' 
@@ -217,18 +306,22 @@ async function _channel(req, res){
 
                     ffmpeg.kill('SIGINT');
                 });
+
+                return;
             } catch (error) {
                 Logger.error('Error starting stream:', error.message);
 
                 res.status(500).send('Failed to start stream');
+
+                return;
             }
         }
-        else
+        else if(selectedChannel.type == "ota")
         {
             // request from device
             if( CURRENT_STREAMS < TUNER_COUNT )
             {
-                const firstReq = await reqTabloDevice("POST",CREDS_DATA.device.url,`/guide/channels/${channelId}/watch`, CREDS_DATA.UUID);
+                const firstReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID);
 
                 try {
                     var firstJSON = JSON.parse(firstReq.toString());
@@ -260,10 +353,14 @@ async function _channel(req, res){
 
                         ffmpeg.kill('SIGINT');
                     });
+
+                    return;
                 } catch (error) {
                     Logger.error('Error starting stream:', error.message);
 
                     res.status(500).send('Failed to start stream');
+
+                    return;
                 }
             }
             else
@@ -271,12 +368,45 @@ async function _channel(req, res){
                 Logger.error(`Client ${ip && ip.replace(/::ffff:/,"")} connected to ${channelId}, but max streams are running.`);
 
                 res.status(500).send('Failed to start stream');
+
+                return;
             }
+        } 
+        else
+        {
+            // TODO: personal data
+            return;
         }
     }
     else
     {
-        return res.status(404).send('Channel not found');
+        res.status(404).send('Channel not found');
+
+        return;
+    }
+}
+
+/**
+ * 
+ * @param {express.Request} req 
+ * @param {express.Response} res 
+ */
+async function _guide_serve(req, res){
+    try {
+        const data = FS.readFile(GUIDE_FILE);
+
+        const headers = {
+            "content-type": "application/xml"
+        }
+
+        res.writeHead(200,headers);
+
+        res.end(data);
+
+        return;
+    } catch (error) {
+        res.status(404).send('Guide not found');
+        return;
     }
 }
 
@@ -298,81 +428,41 @@ async function _run_server() {
         app.set('trust proxy', true);
 
         // Middleware to log requests by IP and path
-        app.use((req, res, next) => {
-            _middleware(req, res, next, PORT);
+        app.use(async (req, res, next) => {
+           return await _middleware(req, res, next, PORT);
         });
 
         // everything gets routed here to route.
         app.get("/discover.json", async (req, res) => {
-            var name = "Tablo 4th Gen Proxy";
-
-            if(OTT_SETTINGS == "split")
-            {
-                name = "Tablo 4th Gen OTA Proxy";
-            }
-            
-            return await _discover(req, res, name, SERVER_URL, "12345678");
+            return await _discover(req, res, "Tablo 4th Gen Proxy", SERVER_URL, "12345678");
         })
 
         app.get("/lineup.json", async (req, res) =>{
-            var type = "";
-
-            if(OTT_SETTINGS == "split")
-            {
-                type = "exclude";
-            }
-
-            return await _lineup(req, res, type);
+            return await _lineup(req, res);
         })
 
         app.get("/lineup_status.json", async (req, res) =>{
             return await _lineup_status(req, res);
         })
 
-        // @ts-ignore
-        app.get('/channel/:channelId', async (req, res) => {
-            _channel(req, res);
+        if(CREATE_XML)
+        {
+            app.get("/guide.xml", async (req, res) =>{
+                return await _guide_serve(req, res);
+            })
+        }
+
+        app.get("/channel/:channelId", async (req, res) => {
+            return await _channel(req, res);
         })
 
         // Start the server
         app.listen(PORT, () => {
-            Logger.info(`Server is running on ${C_HEX.blue}${SERVER_URL}${C_HEX.reset} with ${TUNER_COUNT} tuners${OTT_SETTINGS == "remove" ? " (without ott channels)": ""}`);
-        });
-    }
-
-    if(OTT_SETTINGS == "split")
-    {
-        // start second server
-        const app2 = express();
-
-        app2.set('trust proxy', true);
-
-        // Middleware to log requests by IP and path
-        app2.use((req, res, next) => {
-            _middleware(req, res, next, PORT);
-        });
-
-        // everything gets routed here to route.
-        app2.get("/discover.json", async (req, res) => {
-            return await _discover(req, res, "Tablo 4th Gen OTT Proxy", SERVER_URL2, "87654321");
-        })
-
-        app2.get("/lineup.json", async (req, res) =>{
-            return await _lineup(req, res, "only");
-        })
-
-        app2.get("/lineup_status.json", async (req, res) =>{
-            return await _lineup_status(req, res);
-        })
-
-        // @ts-ignore
-        app2.get('/channel/:channelId', async (req, res) => {
-            _channel(req, res);
-        })
-
-        // Start the server
-        app2.listen(PORT2, () => {
-            Logger.info(`Server is running on ${C_HEX.blue}${SERVER_URL2}${C_HEX.reset} with ott content only.`);
+            Logger.info(`Server is running on ${C_HEX.blue}${SERVER_URL}${C_HEX.reset} with ${TUNER_COUNT} tuners`);
+            if(CREATE_XML)
+            {
+                Logger.info(`Guide data can be found at ${C_HEX.blue}${SERVER_URL}/guide.xml${C_HEX.reset}`);
+            }
         });
     }
 };
@@ -418,6 +508,7 @@ async function reqCreds()
 
         try {
             loginCreds = JSON.parse(retData);
+
             if(loginCreds.code == undefined)
             {
                 if(loginCreds.is_verified != true)
@@ -627,6 +718,8 @@ async function reqCreds()
 
     masterCreds.UUID =  typeof uuid == "string" ? uuid : "";
 
+    Logger.info(`Connecting to device.`);
+
     const firstReq = await reqTabloDevice("GET", masterCreds.device.url,`/server/info`, masterCreds.UUID);
 
     try {
@@ -636,7 +729,7 @@ async function reqCreds()
         {
             masterCreds.tuners = reqPars.model.tuners;
 
-            Logger.info(`${reqPars.model.name} with ${masterCreds.tuners} max tuners found!`);
+            Logger.info(`Found ${reqPars.model.name} with ${masterCreds.tuners} max tuners found!`);
         }
     } catch (error) {
         Logger.error(`Could not reach device. Make sure it's on the same network and try again!`);
@@ -653,6 +746,7 @@ async function reqCreds()
     FS.writeFile(encryCreds, CREDS_FILE);
 
     Logger.info(`Credentials successfully encrypted! Ready to use the server!`);
+
     return 1;
 };
 
@@ -699,8 +793,340 @@ async function readCreds(){
     }
 }
 
+/**
+ * 
+ * @param {channelLineup[]} lineUp 
+ */
+async function parseGuideData(lineUp){
+    try {
+        const guideDays = JSDate.getDaysFromToday(GUIDE_DAYS);
+
+        const xw = new XMLWriter(true);
+
+        xw.startDocument();
+
+        xw.startElement('tv');
+
+        xw.writeAttribute('generator-info-name', 'Tablo 4th Gen Proxy');
+        
+        for (let i = 0; i < lineUp.length; i++) {
+            const el = lineUp[i];
+
+            // write channel
+            xw.startElement('channel');
+
+            var channelNum = "";
+
+            if(el.kind == "ota")
+            {
+                channelNum = `${el.ota.major}.${el.ota.minor}`;
+
+                xw.writeAttribute('id', channelNum);
+
+                xw.startElement('display-name');
+
+                xw.writeAttribute('lang', 'en');
+
+                xw.text(el.ota.callSign);
+
+                xw.endElement(); // display-name
+            }
+            else
+            {
+                channelNum = `${el.ott.major}.${el.ott.minor}`;
+
+                xw.writeAttribute('id', channelNum);
+
+                xw.startElement('display-name');
+
+                xw.writeAttribute('lang', 'en');
+
+                xw.text(el.ott.callSign);
+
+                xw.endElement(); // display-name
+            }
+
+            if (el.logos.length != 0) {
+                xw.startElement('icon');
+
+                xw.writeAttribute('src', el.logos[0].url);
+
+                xw.endElement(); // icon
+            }
+
+            xw.endElement(); // channel
+
+            /**
+             * @type {guideInfo[][]}
+             */
+            const filesData = [];
+
+            var totalForChannel = 0;
+
+            var curCount = 0;
+
+            for (let z = 0; z < guideDays.length; z++) {
+                const guideDay = guideDays[z];
+
+                const fileNameTD = el.identifier + "_" + guideDay + ".json";
+
+                const fileTD = path.join(DIR_NAME, "tempGuide", fileNameTD);
+
+                /**
+                 * @type {guideInfo[]}
+                 */
+                const tdData = FS.readJSON(fileTD);
+                
+                filesData.push(tdData);
+
+                totalForChannel += tdData.length;
+            }
+
+            Logger.info(`Creating ${el.name} - ${channelNum} guide data.`);
+
+            //write programme
+            for(let q = 0; q < filesData.length; q++)
+            {
+                const tdData = filesData[q];
+
+                for (let z = 0; z < tdData.length; z++) 
+                {
+                    const tdEL = tdData[z];
+
+                    const end = new Date(tdEL.datetime).getTime() + (tdEL.duration * 1000);
+
+                    if(end > Date.now())
+                    {
+                        const startDate = JSDate.getXMLDateString(tdEL.datetime);
+
+                        const endDate = JSDate.getXMLDateString(end);
+                        
+                        // parse data
+                        xw.startElement('programme');
+
+                        xw.writeAttribute('start', startDate);
+
+                        xw.writeAttribute('stop', endDate);
+
+                        xw.writeAttribute('channel', channelNum);
+
+                        xw.startElement('title');
+
+                        xw.writeAttribute('lang', 'en');
+
+                        if( tdEL.kind == "episode" &&
+                            tdEL.episode.episodeNumber != null
+                        )
+                        {
+
+                            xw.text(tdEL.title.replace(/[\n\r]+/g, " "));
+
+                            xw.endElement(); // title
+
+                            xw.writeRaw('\n        <previously-shown/>');
+
+                            xw.startElement('sub-title');
+
+                            xw.writeAttribute('lang', 'en');
+                            
+                            xw.text(tdEL.show.title.replace(/[\n\r]+/g, " "));
+
+                            xw.endElement(); // sub-title
+
+                            xw.startElement('episode-num');
+
+                            xw.writeAttribute('system', 'xmltv_ns');
+
+                            var season = 1;
+
+                            if( tdEL.episode.season.kind != "none" &&
+                                tdEL.episode.season.kind != "number" 
+                            )
+                            {
+                                season = Number(tdEL.episode.season.number);
+                            }
+
+                            xw.text((season - 1) + ' . ' + (tdEL.episode.episodeNumber - 1) + ' . 0/1');
+
+                            xw.endElement(); // episode-num
+                        }
+                        else
+                        {
+                            xw.text(tdEL.title.replace(/[\n\r]+/g, " "));
+
+                            xw.endElement(); // title
+                        }
+
+                        if(tdEL.images.length != 0)
+                        {
+                            xw.startElement('icon');
+
+                            xw.writeAttribute('src', tdEL.images[0].url);
+
+                            xw.endElement(); // icon
+                        }
+
+                        if(tdEL.description != null)
+                        {
+                            xw.startElement('desc');
+
+                            xw.writeAttribute('lang', 'en');
+
+                            xw.text(tdEL.description.replace(/[\n\r]+/g, " "));
+
+                            xw.endElement(); // desc
+                        }
+
+                        if( tdEL.kind == "episode" &&
+                            tdEL.episode.rating != null
+                        )
+                        {
+                            xw.startElement('rating');
+
+                            xw.writeAttribute('system', 'MPAA');
+
+                            xw.writeElement('value', tdEL.episode.rating);
+
+                            xw.endElement();
+                        }
+                        else if( tdEL.kind == "movieAiring" &&
+                                tdEL.movieAiring.filmRating != null
+                        )
+                        {
+                            xw.startElement('rating');
+
+                            xw.writeAttribute('system', 'MPAA');
+
+                            xw.writeElement('value', tdEL.movieAiring.filmRating);
+                            
+                            xw.endElement();// rating
+                        }
+
+                        xw.endElement(); // programme
+
+                        FS.loadingBar(totalForChannel, ++curCount);
+                    }
+                    else
+                    {
+                        FS.loadingBar(totalForChannel, ++curCount);
+                    }
+                }
+            }
+            process.stdout.write('\n');
+        }
+
+        // TODO: personal data
+
+        xw.endElement(); // tv
+
+        xw.endDocument();
+
+        Logger.info(`Finished creating guide data.`);
+
+        return xw.toString() || "";
+    } catch (error) {
+        Logger.error(`Issue creating guide data.`, error);
+
+        return "";
+    }
+}
+
+async function cacheGuideData(){
+    const tempFolder = path.join(DIR_NAME, "tempGuide");
+
+    if(!FS.directoryExists(tempFolder))
+    {
+        FS.createDirectory(tempFolder);
+    }
+    
+    const guideDays = JSDate.getDaysFromToday(GUIDE_DAYS);
+
+    const host = `lighthousetv.ewscloud.com`;
+
+    const path1 = "/api/v2/account/guide/channels/"; // /api/v2/account/guide/channels/S122912_503_01/airings/2025-04-20/
+
+    /**
+     * @type {channelLineup[]}
+     */
+    const lineup = FS.readJSON(LINEUP_FILE);
+
+    const neededFiles = [];
+
+    const totalFiles = lineup.length * GUIDE_DAYS;
+
+    var currentFile = 0;
+
+    Logger.info(`Prepping ${totalFiles} needed guide files.`);
+
+    for (let i = 0; i < lineup.length; i++)
+    {
+        const el = lineup[i];
+
+        for(let z = 0; z < guideDays.length; z++)
+        {
+            const guideDay = guideDays[z];
+
+            const fileName = el.identifier + "_" + guideDay + ".json";
+
+            neededFiles.push(fileName);
+
+            const file = path.join(tempFolder, fileName);
+
+            if(!FS.fileExists(file))
+            {
+
+                try {
+                    const reqPathTD = path1 + el.identifier + "/airings/" + guideDay + "/";
+
+                    const headers = {
+                        'User-Agent': 'Tablo-FAST/1.7.0 (Mobile; iPhone; iOS 16.6)',
+                        'Accept': '*/*',
+                        "Authorization": CREDS_DATA.lighthousetvAuthorization,
+                        'Lighthouse': CREDS_DATA.Lighthouse
+                    };
+
+                    const dataIn1 = await makeHTTPSRequest("GET", host, reqPathTD, headers);
+
+                    if(dataIn1)
+                    {
+                        FS.loadingBar(totalFiles, ++currentFile);
+
+                        FS.writeJSON(dataIn1, file);
+                    }
+                    else
+                    {
+                        currentFile++;
+
+                        Logger.error(`Could not write ${fileName}`, dataIn1);
+                    }
+                } catch (error) {
+                    currentFile++;
+
+                    Logger.error(error);
+                }
+            }
+            else
+            {
+                FS.loadingBar(totalFiles, ++currentFile);
+            }
+        }
+    }
+    process.stdout.write('\n');
+
+    FS.deleteUnlistedFiles(tempFolder, neededFiles);
+
+    const xmlData = await parseGuideData(lineup);
+
+    FS.writeFile(xmlData, GUIDE_FILE);
+
+    return;
+}
+
 async function parseLineup(){
     try {
+        /**
+         * @type {channelLineup[]}
+         */
         const lineupParse = FS.readJSON(LINEUP_FILE);
 
         LINEUP_DATA = {};
@@ -723,12 +1149,15 @@ async function parseLineup(){
                 LINEUP_DATA[el.identifier] = {
                     GuideNumber: `${el.ott.major}.${el.ott.minor}`,
                     GuideName: el.ott.callSign,
-                    URL: OTT_SETTINGS == "split" ? `${SERVER_URL2}/channel/${el.identifier}` : `${SERVER_URL}/channel/${el.identifier}`,
+                    URL: `${SERVER_URL}/channel/${el.identifier}`,
                     type: "ott",
                     srcURL: el.ott.streamUrl
                 }
             }
         }
+
+        //TODO: personal data
+
         return 1;
     } catch (error) {
         Logger.error("Issue with creating new lineup file.", error);
@@ -761,9 +1190,14 @@ async function makeLineup(){
     try {
         const retData = await makeHTTPSRequest("GET", host, path, headers);
 
+        /**
+         * @type {channelLineup[]}
+         */
         const lineupParse = JSON.parse(retData);
 
         FS.writeJSON(JSON.stringify(lineupParse, null, 4), LINEUP_FILE);
+
+        // TODO: personal data
 
         await parseLineup();
         
@@ -788,11 +1222,29 @@ async function makeLineup(){
 
             await reqCreds();
 
-            await makeLineup();
+            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+
+            await SCHEDULE.runTask();
+
+            if(CREATE_XML)
+            {
+                GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
+
+                await GUIDE.runTask();
+            }
         }
         else
         {
-            await makeLineup();
+            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+
+            await SCHEDULE.runTask();
+
+            if(CREATE_XML)
+            {
+                GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
+
+                await GUIDE.runTask();
+            }
         }
         await exit();
     }
@@ -801,7 +1253,9 @@ async function makeLineup(){
         // creds need setting up
         Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
-        await reqCreds();
+        SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+
+        await SCHEDULE.runTask();
 
         await exit();
     }
@@ -816,55 +1270,77 @@ async function makeLineup(){
 
             await reqCreds();
 
-            await makeLineup();
+            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+
+            await SCHEDULE.scheduleNextRun();
         }
         else if(!FS.fileExists(LINEUP_FILE))
         {
             Logger.info(`No current channel lineup!`);
 
-            await makeLineup();
+            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+
+            await SCHEDULE.scheduleNextRun();
         }
 
         try {
             await readCreds();
 
-            await parseLineup();
+            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+
+            await SCHEDULE.scheduleNextRun();
         } catch (error) {
-            Logger.error("Could not read lineup file. Rerun app with --lineup.");
+            Logger.error("Could not read lineup file. Check permissions and rerun app with --lineup.");
 
-            await exit();
+            return await exit();
         } 
+        
+        if(CREATE_XML)
+        {
+            GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
 
-        SCHEDULE = new Scheduler(SCHEDULE_FILE, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+            await GUIDE.scheduleNextRun();
+        }
 
         // Then run the server.
         console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}x${C_HEX.yellow}' at anytime to exit.${C_HEX.reset}`);
 
-        console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}l${C_HEX.yellow}' at anytime to request a new channel lineup.${C_HEX.reset}`);
+        console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}l${C_HEX.yellow}' at anytime to request a new channel lineup / guide.${C_HEX.reset}`);
 
         process.stdin.setRawMode(true);
 
         process.stdin.resume();
 
-        process.stdin.on('data', (key) => {
+        process.stdin.on('data', async (key) => {
             if (key[0] == 0x78) // x key
             { 
-                console.log(`${C_HEX.blue}Exiting Process...${C_HEX.reset}`);
                 if(SCHEDULE)
                 {
                     SCHEDULE.cancel();
                 }
+                if(GUIDE)
+                {
+                    GUIDE.cancel();
+                }
+                console.log(`${C_HEX.blue}Exiting Process...${C_HEX.reset}`);
                 setTimeout(() => {
                     process.exit(0);
                 }, 2000);
             }
             else if (key[0] == 0x6C) // l key
             {
-                makeLineup();
+                if(SCHEDULE)
+                {
+                    await SCHEDULE.runTask();
+                }
+                if(GUIDE)
+                {
+                    await GUIDE.runTask();
+                }
             }
         });
         
         // Core function here
-        _run_server();  
+        _run_server();
     }
 })();

@@ -5,7 +5,6 @@
  */
 
 require('dotenv').config();
-const url = require('url');
 const pack = require('../package.json');
 const { Command } = require('commander');
 const keypress = require('keypress');
@@ -27,6 +26,7 @@ const {
     createCipheriv,
     createDecipheriv
 } = require("crypto");
+const XMLWriter = require('xml-writer');
 
 /**
  * Base path where server is running.
@@ -141,28 +141,9 @@ function _confrim_port() {
 };
 
 /**
- * confrims port in use
- * 
- * @returns {string} port
- */
-function _confrim_port2() {
-    //check env
-    if (process.env.PORT2 == "" || process.env.PORT2 == undefined) {
-        return "8182";
-    } else {
-        return process.env.PORT2;
-    }
-};
-
-/**
  * Port the server is using.
  */
 const PORT = _confrim_port();
-
-/**
- * Second port for when splitting ott and ota
- */
-const PORT2 = _confrim_port2();
 
 /**
  * Get a boolean string
@@ -190,6 +171,27 @@ function _confrim_boolean(value){
 
 const SAVE_LOG = process.env.SAVE_LOG == undefined ? false : _confrim_boolean(process.env.SAVE_LOG);
 
+const CREATE_XML = process.env.CREATE_XML == undefined ? false : _confrim_boolean(process.env.CREATE_XML);
+
+function _confrim_guide_days(){
+    //check env
+    if (process.env.GUIDE_DAYS == "" || process.env.GUIDE_DAYS == undefined) {
+        return 2;
+    } else {
+        var num = Number(process.env.GUIDE_DAYS);
+        if(num > 0 && num < 8)
+        {
+            return num;
+        }
+        else
+        {
+            return 2;
+        }
+    }
+}
+
+const GUIDE_DAYS = _confrim_guide_days();
+
 /**
  * for creating and confriming the server URL for the server.
  * 
@@ -206,13 +208,6 @@ function _confrim_url(PORT) {
  * As ``http://${IP_ADDRESS}:${PORT}``
  */
 const SERVER_URL = _confrim_url(PORT);
-
-/**
- * URL of the machine the server connects to.
- * 
- * As ``http://${IP_ADDRESS}:${PORT}``
- */
-const SERVER_URL2 = _confrim_url(PORT2);
 
 /**
  * For creating log level for Logger
@@ -269,40 +264,6 @@ function _get_local_IPv4_address() {
 const LINEUP_UPDATE_INTERVAL = process.env.LINEUP_UPDATE_INTERVAL ? 
         Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL)) ? 30 * (24 * 60 * 60 * 1000) : Number(process.env.LINEUP_UPDATE_INTERVAL) * (24 * 60 * 60 * 1000) 
         : 30 * (24 * 60 * 60 * 1000);
- 
-/**
- * Gets ott setting
- * 
- * @returns {string} ``"include"``
- */
-function _confrim_ott(){
-    if(process.env.OTT_SETTINGS == undefined)
-    {
-        return "include";
-    }
-    const value = process.env.OTT_SETTINGS.toLowerCase();
-    if(value == "remove")
-    {
-        return "remove";
-    }
-    else if(value == "split")
-    {
-        return "split";
-    }
-    else if(value == "include")
-    {
-        return "include";
-    }
-    else
-    {
-        return "include";
-    }
-}
-
-/**
- * How to handle ott channels
- */
-const OTT_SETTINGS = _confrim_ott();
 
 /**
  * Static Class for creating and conveting Dates in JavaScript format and others.
@@ -378,6 +339,82 @@ class JSDate {
         const seconds = String(date.getUTCSeconds()).padStart(2, '0');
 
         return `${dayOfWeek}, ${dayOfMonth} ${month} ${year} ${hours}:${minutes}:${seconds} GMT`;
+    }
+
+    /**
+     * 
+     * @param {number} days 
+     * @returns {string[]}
+     */
+    static getDaysFromToday(days) {
+        /**
+         * 
+         * @param {Date} date 
+         * @returns 
+         */
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+
+            const day = String(date.getDate()).padStart(2, '0');
+
+            return `${year}-${month}-${day}`;
+        };
+
+        const dates = [];
+
+        // Get today's date
+        
+        for (let i = 0; i < days; i++) {
+            const curDate = new Date();
+
+            curDate.setDate(curDate.getDate() + i);
+
+            dates.push(formatDate(curDate));
+        }
+
+        // Return the dates
+        return dates;
+    }
+
+    /**
+     * 
+     * @param {string | number} dateString 
+     * @returns 
+     */
+    static getXMLDateString(dateString) {
+        // Parse the ISO date string into a Date object
+        const date = new Date(dateString);
+
+        if (isNaN(date.getTime())) {
+            throw new Error('Invalid date string');
+        }
+
+        // Extract components from the Date object
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+        const day = String(date.getDate()).padStart(2, '0');
+        const hour = String(date.getHours()).padStart(2, '0');
+        const minute = String(date.getMinutes()).padStart(2, '0');
+        const second = String(date.getSeconds()).padStart(2, '0');
+
+        // Format the date as YYYYMMDDHHMMSS
+        const formattedDate = `${year}${month}${day}${hour}${minute}${second}`;
+
+        // Calculate the timezone offset in minutes
+        const timezoneOffsetMinutes = -date.getTimezoneOffset();
+
+        // Convert the timezone offset to hours and minutes
+        const timezoneHours = Math.floor(Math.abs(timezoneOffsetMinutes) / 60);
+        const timezoneMinutes = Math.abs(timezoneOffsetMinutes) % 60;
+
+        // Format the timezone as ±HHMM
+        const timezoneSign = timezoneOffsetMinutes >= 0 ? '+' : '-';
+        const formattedTimezone = `${timezoneSign}${String(timezoneHours).padStart(2, '0')}${String(timezoneMinutes).padStart(2, '0')}`;
+
+        // Combine the formatted date and timezone
+        return `${formattedDate} ${formattedTimezone}`;
     }
 
     /**
@@ -1209,24 +1246,27 @@ class Scheduler {
     constructor(schedulerFile, label, interval, taskFn) {
 
         this.interval = interval;
+
         this.schedulerFile = schedulerFile;
 
         if(!FS.fileExists(schedulerFile))
         {
             this.nextCheck = JSDate.getRFC1123DateString();
+
             const newFile = {
                 interval: this.interval,
                 nextCheck: this.nextCheck
             };
+
             FS.writeJSON(newFile, schedulerFile);
-            this.schedulerFile = schedulerFile;
         }
         else
         {
             const readFile = FS.readJSON(schedulerFile);
+
             this.interval = readFile.interval;
+
             this.nextCheck = readFile.nextCheck;
-            this.schedulerFile = schedulerFile;
         }
 
         this.runAt = new Date(this.nextCheck);
@@ -1239,13 +1279,47 @@ class Scheduler {
 
         this.label = label;
 
-        this.task = taskFn;
+        this.task = taskFn;   
+    }
 
-        const self = this;
+    async scheduleNextRun(){
+        if(this.runAt.getTime() - JSDate.ct <= 0)
+        {
+            await this.runTask();
+        }
+        this.timeout = setInterval(async () => {
+            if(this.runAt.getTime() - JSDate.ct <= 0)
+            {
+                await this.runTask();
+            }
+        }, 24 * 60 * 60 * 1000); // once a day
+        return;
+    }
 
-        this.runTask().then( ret =>{
-            self.makeTimeout();
-        })        
+    async runTask(){
+        try {
+            await this.task();
+
+            this.nextCheck = JSDate.getRFC1123DateString(JSDate.ct + this.interval);
+
+            this.runAt = new Date(this.nextCheck);
+
+            // write file;
+            const newFile = {
+                interval: this.interval,
+                nextCheck: this.nextCheck
+            };
+
+            FS.writeJSON(newFile, this.schedulerFile);
+
+            Logger.info(`${this.label} finished running. Next run scheduled for ${this.nextCheck}`);
+
+            return;
+        } catch (e) {
+            Logger.error(`${this.label} failed:`, e);
+
+            return;
+        }
     }
     
     /**
@@ -1254,32 +1328,6 @@ class Scheduler {
     cancel() {
         if (this.timeout) {
             clearTimeout(this.timeout);
-        }
-    }
-
-    makeTimeout(){
-        this.timeout = setInterval(async () => {
-            await this.runTask();
-        }, 24 * 60 * 60 * 1000); // once a day
-    }
-
-    async runTask(){
-        if(this.runAt.getTime() - JSDate.ct <= 0)
-        {
-            try {
-                await this.task();
-                this.nextCheck = JSDate.getRFC1123DateString(JSDate.ct + this.interval);
-                this.runAt = new Date(this.nextCheck);
-                // write file;
-                const newFile = {
-                    interval: this.interval,
-                    nextCheck: this.nextCheck
-                };
-                FS.writeJSON(newFile, this.schedulerFile);
-                Logger.info(`${this.label} finished running. Next update scheduled for ${this.nextCheck}`);
-            } catch (e) {
-                Logger.error(`${this.label} failed:`, e);
-            }
         }
     }
 }
@@ -1612,6 +1660,37 @@ class FS {
         }
         return finished_array;
     };
+
+    /**
+     * Deletes files in the specified directory that are NOT listed in the filenames array.
+     *
+     * @param {string} directory - The directory path where the files are located.
+     * @param {string[]} filenames - An array of filenames to keep.
+     */
+    static deleteUnlistedFiles(directory, filenames) {
+        // Read the contents of the directory
+        fs.readdir(directory, (err, files) => {
+            if (err) {
+                Logger.error(`Error reading directory: ${err}`);
+                return;
+            }
+
+            // Filter out the files that are not in the filenames array
+            const filesToDelete = files.filter(file => !filenames.includes(file));
+
+            // Delete those files
+            filesToDelete.forEach(file => {
+                const filePath = path.join(directory, file);
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        Logger.error(`Error deleting file ${filePath}: ${err}`);
+                    } else {
+                        Logger.info(`Deleted file: ${filePath}`);
+                    }
+                });
+            });
+        });
+    }
 
     /**
      * Writes a file. Will create the directory if it doesn't exist.
@@ -2389,18 +2468,18 @@ function UUID(version = 4, options = {}, asBuffer = false) {
 module.exports = {
     Logger,
     Scheduler,
+    JSDate,
     FS,
     Encryption,
 
     C_HEX,
     ARGV,
     PORT,
-    PORT2,
     LINEUP_UPDATE_INTERVAL,
-    OTT_SETTINGS,
+    CREATE_XML,
+    GUIDE_DAYS,
     DIR_NAME,
     SERVER_URL,
-    SERVER_URL2,
 
     makeHTTPSRequest,
     reqTabloDevice,

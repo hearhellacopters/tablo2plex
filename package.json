@@ -1,6 +1,6 @@
 {
     "name": "tablo2plex",
-    "version": "0.2",
+    "version": "0.3",
     "description": "Tablo 4th Gen proxy to Plex server translation",
     "type": "commonjs",
     "main": "app.js",
@@ -26,7 +26,8 @@
         "dotenv": "^16.4.1",
         "express": "^5.1.0",
         "inquirer": "^11.1.0",
-        "keypress": "github:hearhellacopters/keypress"
+        "keypress": "github:hearhellacopters/keypress",
+        "xml-writer": "^1.7.0"
     },
     "engines": {
         "node": ">=18.0.0"

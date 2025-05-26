@@ -6,11 +6,14 @@ logs/*
 # personal files
 package-lock.json
 creds.bin
-schedule.json
+schedule_lineup.json
 lineup.json
 ffmpeg.exe
 StartUpProcedures.txt
 *.exe
 *.zip
+tempGuide/*
+guide.xml
+schedule_guide.json
 #test files
 test*
