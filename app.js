@@ -853,7 +853,16 @@ async function parseGuideData(lineUp){
             if (el.logos.length != 0) {
                 xw.startElement('icon');
 
-                xw.writeAttribute('src', el.logos[0].url);
+                const lightLarge = el.logos.find(self=>self.kind == "lightLarge");
+
+                if(lightLarge)
+                {
+                    xw.writeAttribute('src', lightLarge.url);
+                }
+                else
+                {
+                    xw.writeAttribute('src', el.logos[0].url);
+                }
 
                 xw.endElement(); // icon
             }
