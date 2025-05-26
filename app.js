@@ -462,6 +462,10 @@ async function _run_server() {
             if(CREATE_XML)
             {
                 Logger.info(`Guide data can be found at ${C_HEX.blue}${SERVER_URL}/guide.xml${C_HEX.reset}`);
+
+                const guideLoc = path.join(DIR_NAME,"guide.xml");
+
+                Logger.info(`or ${C_HEX.blue}${guideLoc}${C_HEX.reset}`);
             }
         });
     }
