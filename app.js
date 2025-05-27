@@ -19,6 +19,7 @@ const {
     ARGV,
     PORT,
     LINEUP_UPDATE_INTERVAL,
+    INCLUDE_PSEUDOTV_GUIDE,
     GUIDE_DAYS,
     CREATE_XML,
     DIR_NAME,
@@ -181,12 +182,29 @@ async function _middleware(req, res, next, port){
 
     const path = req.path;
 
+    // Allow any origin (you can specify a specific origin if needed)
+    res.header('Access-Control-Allow-Origin', '*');
+
+    // Allowed headers (customize as needed)
+    //res.header('Access-Control-Allow-Headers', 'Origin, Access-Control-Allow-Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
+    // Allowed methods (customize as needed)
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+
     if(!(path == "/discover.json" || path == "/lineup_status.json"))
     {
         Logger.debug(`Req ${ip && ip.replace(/::ffff:/,"")}:${port}${path}`);
     }
 
-    next(); // Move to the next middleware or route handler
+    if(req.method === 'OPTIONS')
+    {
+        res.status(204).send('');
+    }
+    else
+    {
+        next(); // Move to the next middleware or route handler
+    }
 
     return;
 }
@@ -372,11 +390,6 @@ async function _channel(req, res){
                 return;
             }
         } 
-        else
-        {
-            // TODO: personal data
-            return;
-        }
     }
     else
     {
@@ -443,6 +456,10 @@ async function _run_server() {
 
         app.get("/lineup_status.json", async (req, res) =>{
             return await _lineup_status(req, res);
+        })       
+
+        app.get("/channel/:channelId", async (req, res) => {
+            return await _channel(req, res);
         })
 
         if(CREATE_XML)
@@ -452,8 +469,8 @@ async function _run_server() {
             })
         }
 
-        app.get("/channel/:channelId", async (req, res) => {
-            return await _channel(req, res);
+        app.get("/favicon.ico", async (req, res) =>{
+            res.end("");
         })
 
         // Start the server
@@ -1028,7 +1045,22 @@ async function parseGuideData(lineUp){
             process.stdout.write('\n');
         }
 
-        // TODO: personal data
+        if(INCLUDE_PSEUDOTV_GUIDE)
+        {
+            if(FS.fileExists(path.join(DIR_NAME,"/.pseudotv/xmltv.xml")))
+            {
+                const personal = FS.readFile(path.join(DIR_NAME,"/.pseudotv/xmltv.xml"));
+
+                const lines = personal.toString().split('\n');
+
+                // Remove the 2nd and last line
+                const cleanedLines = lines.slice(2, -1);
+
+                const cleanedData = cleanedLines.join('\n');
+
+                xw.writeRaw(cleanedData);
+            }
+        }
 
         xw.endElement(); // tv
 
@@ -1136,49 +1168,44 @@ async function cacheGuideData(){
 }
 
 async function parseLineup(){
-    if(LINEUP_DATA == undefined)
-    {
-        try {
-            /**
-             * @type {channelLineup[]}
-             */
-            const lineupParse = FS.readJSON(LINEUP_FILE);
+    try {
+        /**
+         * @type {channelLineup[]}
+         */
+        const lineupParse = FS.readJSON(LINEUP_FILE);
 
-            LINEUP_DATA = {};
+        LINEUP_DATA = {};
 
-            for (let i = 0; i < lineupParse.length; i++) {
-                const el = lineupParse[i];
+        for (let i = 0; i < lineupParse.length; i++) {
+            const el = lineupParse[i];
 
-                if(el.kind == "ota")
-                {
-                    LINEUP_DATA[el.identifier] = {
-                        GuideNumber: `${el.ota.major}.${el.ota.minor}`,
-                        GuideName: el.ota.callSign,
-                        URL: `${SERVER_URL}/channel/${el.identifier}`,
-                        type: "ota",
-                        srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
-                    }
-                }
-                else if (el.kind == "ott")
-                {
-                    LINEUP_DATA[el.identifier] = {
-                        GuideNumber: `${el.ott.major}.${el.ott.minor}`,
-                        GuideName: el.ott.callSign,
-                        URL: `${SERVER_URL}/channel/${el.identifier}`,
-                        type: "ott",
-                        srcURL: el.ott.streamUrl
-                    }
+            if(el.kind == "ota")
+            {
+                LINEUP_DATA[el.identifier] = {
+                    GuideNumber: `${el.ota.major}.${el.ota.minor}`,
+                    GuideName: el.ota.callSign,
+                    URL: `${SERVER_URL}/channel/${el.identifier}`,
+                    type: "ota",
+                    srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
                 }
             }
-
-            //TODO: personal data
-
-            return 1;
-        } catch (error) {
-            Logger.error("Issue with creating new lineup file.", error);
-
-            return await exit();
+            else if (el.kind == "ott")
+            {
+                LINEUP_DATA[el.identifier] = {
+                    GuideNumber: `${el.ott.major}.${el.ott.minor}`,
+                    GuideName: el.ott.callSign,
+                    URL: `${SERVER_URL}/channel/${el.identifier}`,
+                    type: "ott",
+                    srcURL: el.ott.streamUrl
+                }
+            }
         }
+
+        return 1;
+    } catch (error) {
+        Logger.error("Issue with creating new lineup file.", error);
+
+        return await exit();
     }
 }
 
@@ -1212,8 +1239,6 @@ async function makeLineup(){
         const lineupParse = JSON.parse(retData);
 
         FS.writeJSON(JSON.stringify(lineupParse, null, 4), LINEUP_FILE);
-
-        // TODO: personal data
 
         await parseLineup();
         

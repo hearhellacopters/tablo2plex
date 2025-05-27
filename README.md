@@ -10,7 +10,8 @@ __Tablo2Plex__ is a Node.js-based server app that emulates an HDHomeRun device t
 - 🔁 Parses dynamic M3U playlists from Tablo on demand
 - 🎥 Streams `.ts` segments using FFmpeg via a unified stream endpoint
 - 📺 Compatible with Plex Live TV & DVR interface
-- 🔒 Encrypts your personal Tablo credentials
+- 🔒 Encrypts your personal credentials
+- 📃 Can also include your PseudoTV EPG as well!
 ---
 
 ## Preface
@@ -62,6 +63,8 @@ Use the ``.env`` file to change options for you would like to use the Tablo devi
 |``PORT`` | Change the port the app runs on (default ``8181``)|
 |``LINEUP_UPDATE_INTERVAL``| How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.|
 |``CREATE_XML``| Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
+|``GUIDE_DAYS``| The amount of days the guide will populate. The more days, the longer it will take to populate on update. Default ``2``, max ``7`` |
+|``INCLUDE_PSEUDOTV_GUIDE``| Due to issues with Plex not loading more than one EPG, you can include the guide data with your guide as long as it's at /.pseudotv/xmltv.xml. Default ``false``|
 |``LOG_LEVEL``| The amount of data you would like to see in the console. Default ``error`` and lower|
 |``SAVE_LOG``| Create a file of all console output to the /logs folder. Default ``false``|
 

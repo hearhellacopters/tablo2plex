@@ -173,6 +173,8 @@ const SAVE_LOG = process.env.SAVE_LOG == undefined ? false : _confrim_boolean(pr
 
 const CREATE_XML = process.env.CREATE_XML == undefined ? false : _confrim_boolean(process.env.CREATE_XML);
 
+const INCLUDE_PSEUDOTV_GUIDE = process.env.INCLUDE_PSEUDOTV_GUIDE == undefined ? false:  _confrim_boolean(process.env.INCLUDE_PSEUDOTV_GUIDE);
+
 function _confrim_guide_days(){
     //check env
     if (process.env.GUIDE_DAYS == "" || process.env.GUIDE_DAYS == undefined) {
@@ -354,7 +356,7 @@ class JSDate {
          */
         const formatDate = (date) => {
             const year = date.getFullYear();
-            
+
             const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
 
             const day = String(date.getDate()).padStart(2, '0');
@@ -2476,6 +2478,7 @@ module.exports = {
     ARGV,
     PORT,
     LINEUP_UPDATE_INTERVAL,
+    INCLUDE_PSEUDOTV_GUIDE,
     CREATE_XML,
     GUIDE_DAYS,
     DIR_NAME,
