@@ -949,7 +949,7 @@ async function parseGuideData(lineUp){
                         )
                         {
 
-                            xw.text(tdEL.title.replace(/[\n\r]+/g, " "));
+                            xw.text(tdEL.show.title.replace(/[\n\r]+/g, " "));
 
                             xw.endElement(); // title
 
@@ -959,7 +959,7 @@ async function parseGuideData(lineUp){
 
                             xw.writeAttribute('lang', 'en');
                             
-                            xw.text(tdEL.show.title.replace(/[\n\r]+/g, " "));
+                            xw.text(tdEL.title.replace(/[\n\r]+/g, " "));
 
                             xw.endElement(); // sub-title
 
