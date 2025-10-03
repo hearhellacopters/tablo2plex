@@ -60,6 +60,8 @@ Use the ``.env`` file to change options for you would like to use the Tablo devi
 
 |Variable |Desc     |
 | :---    | :---  |
+|``NAME``| Name of the device that shows up in Plex|
+|``DEVICE_ID``| Fake ID of the device for when you have more than one device on the network|
 |``PORT`` | Change the port the app runs on (default ``8181``)|
 |``LINEUP_UPDATE_INTERVAL``| How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.|
 |``CREATE_XML``| Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|

@@ -87,11 +87,11 @@ PROGRAM
     .name(pack.name)
     .description(`${C_HEX.blue}Tablo2Plex server${C_HEX.reset}`)
     .version(pack.version)
-    .addHelpText(`beforeAll`,"Use the .env file to set options")
+    .addHelpText(`beforeAll`, "Use the .env file to set options")
     .option('-c, --creds', 'Enter username and password to make a new creds file.')
 
     .option('-l, --lineup', 'Creates a fresh channel lineup file.')
-    
+
 PROGRAM.parse(process.argv);
 
 /**
@@ -150,21 +150,17 @@ const PORT = _confrim_port();
  * 
  * @param {string|undefined} value 
  */
-function _confrim_boolean(value){
-    if(value == undefined)
-    {
+function _confrim_boolean(value) {
+    if (value == undefined) {
         return false;
     }
-    else if(typeof value != "string")
-    {
+    else if (typeof value != "string") {
         return false;
     }
-    else if(value.toLowerCase() == "true")
-    {
+    else if (value.toLowerCase() == "true") {
         return true;
     }
-    else
-    {
+    else {
         return false;
     }
 }
@@ -173,20 +169,18 @@ const SAVE_LOG = process.env.SAVE_LOG == undefined ? false : _confrim_boolean(pr
 
 const CREATE_XML = process.env.CREATE_XML == undefined ? false : _confrim_boolean(process.env.CREATE_XML);
 
-const INCLUDE_PSEUDOTV_GUIDE = process.env.INCLUDE_PSEUDOTV_GUIDE == undefined ? false:  _confrim_boolean(process.env.INCLUDE_PSEUDOTV_GUIDE);
+const INCLUDE_PSEUDOTV_GUIDE = process.env.INCLUDE_PSEUDOTV_GUIDE == undefined ? false : _confrim_boolean(process.env.INCLUDE_PSEUDOTV_GUIDE);
 
-function _confrim_guide_days(){
+function _confrim_guide_days() {
     //check env
     if (process.env.GUIDE_DAYS == "" || process.env.GUIDE_DAYS == undefined) {
         return 2;
     } else {
         var num = Number(process.env.GUIDE_DAYS);
-        if(num > 0 && num < 8)
-        {
+        if (num > 0 && num < 8) {
             return num;
         }
-        else
-        {
+        else {
             return 2;
         }
     }
@@ -238,6 +232,13 @@ function _find_log_level() {
 const _LOG_LEVEL = _find_log_level();
 
 /**
+ * Name of the device
+ */
+const NAME = process.env.NAME ? process.env.NAME : "Tablo 4th Gen Proxy";
+
+const DEVICE_ID = process.env.DEVICE_ID ? process.env.DEVICE_ID : "12345678";
+
+/**
  * Master function for finding machine IP address.
  * 
  * @returns {string} example ``'127.0.0.1'``
@@ -263,9 +264,9 @@ function _get_local_IPv4_address() {
 /**
  * Time in days for each lineup update
  */
-const LINEUP_UPDATE_INTERVAL = process.env.LINEUP_UPDATE_INTERVAL ? 
-        Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL)) ? 30 * (24 * 60 * 60 * 1000) : Number(process.env.LINEUP_UPDATE_INTERVAL) * (24 * 60 * 60 * 1000) 
-        : 30 * (24 * 60 * 60 * 1000);
+const LINEUP_UPDATE_INTERVAL = process.env.LINEUP_UPDATE_INTERVAL ?
+    Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL)) ? 30 * (24 * 60 * 60 * 1000) : Number(process.env.LINEUP_UPDATE_INTERVAL) * (24 * 60 * 60 * 1000)
+    : 30 * (24 * 60 * 60 * 1000);
 
 /**
  * Static Class for creating and conveting Dates in JavaScript format and others.
@@ -367,7 +368,7 @@ class JSDate {
         const dates = [];
 
         // Get today's date
-        
+
         for (let i = 0; i < days; i++) {
             const curDate = new Date();
 
@@ -627,13 +628,12 @@ class JSDate {
 class _CustomLog {
     loc = "";
     constructor() {
-        if(SAVE_LOG)
-        {
+        if (SAVE_LOG) {
             if (!fs.existsSync(path.join(DIR_NAME, `/logs`))) {
                 fs.mkdirSync(path.join(DIR_NAME, `/logs`), { recursive: true });
             }
             this.loc = path.join(DIR_NAME, `/logs/${JSDate.currentTime()}-${LOG_LEVEL}.log`);
-        } 
+        }
     }
     /**
      * Log function.
@@ -646,16 +646,15 @@ class _CustomLog {
             typeof message == "boolean") {
             message = `${text}`;
         } else if (typeof message == "object" &&
-            !(message instanceof Error)) 
-        {
+            !(message instanceof Error)) {
             message = JSON.stringify(text, null, 4);
-        } else if (message == undefined) 
-        {
+        } else if (message == undefined) {
             message = "undefined";
+        } else if (message instanceof Error) {
+            message = message.message;
         }
 
-        if(SAVE_LOG)
-        {
+        if (SAVE_LOG) {
             try {
                 const writeStream = fs.createWriteStream(this.loc, { flags: 'a' });
                 const regexRemove = /\x1b\[[0-9;]*[mG]/g;
@@ -727,24 +726,19 @@ class Logger {
      */
     static log(...message) {
 
-        for (var key = 0; key < message.length; key++) 
-        {
+        for (var key = 0; key < message.length; key++) {
             const text = message[key];
             if (typeof text == "number" ||
                 typeof text == "boolean"
-            ) 
-            {
+            ) {
                 message[key] = `${text}`;
-            } 
-            else if (text instanceof Error) 
-            {
+            }
+            else if (text instanceof Error) {
                 message[key] = text.stack;
-            } 
-            else if (typeof text == "object") 
-            {
+            }
+            else if (typeof text == "object") {
                 message[key] = JSON.stringify(text, null, 4);
-            } else if (text == undefined) 
-            {
+            } else if (text == undefined) {
                 message[key] = `undefined`;
             }
         }
@@ -769,30 +763,24 @@ class Logger {
      * No extra info.
      * 
      * @static
-     * @param {number|boolean|object|string} message - Message to log.
+     * @param {any[]} message - Message to log.
      */
     static info(...message) {
-        if (_LOG_LEVEL >= 0) 
-        {
+        if (_LOG_LEVEL >= 0) {
 
-            for (var key = 0; key < message.length; key++) 
-            {
+            for (var key = 0; key < message.length; key++) {
                 const text = message[key];
                 if (typeof text == "number" ||
                     typeof text == "boolean"
-                ) 
-                {
+                ) {
                     message[key] = `${text}`;
-                } 
-                else if (text instanceof Error) 
-                {
+                }
+                else if (text instanceof Error) {
                     message[key] = text.stack;
-                } else if (typeof text == "object") 
-                {
+                } else if (typeof text == "object") {
                     message[key] = JSON.stringify(text, null, 4);
-                } 
-                else if (text == undefined)
-                {
+                }
+                else if (text == undefined) {
                     message[key] = `undefined`;
                 }
             }
@@ -807,28 +795,22 @@ class Logger {
      * Adds timestamp, filename and line.
      * 
      * @static
-     * @param {number|boolean|object|string} message - Message to log
+     * @param {any[]} message - Message to log
      */
     static error(...message) {
-        if (_LOG_LEVEL >= 1) 
-        {
-            for (var key = 0; key < message.length; key++) 
-            {
+        if (_LOG_LEVEL >= 1) {
+            for (var key = 0; key < message.length; key++) {
                 const text = message[key];
                 if (typeof text == "number" ||
                     typeof text == "boolean"
-                ) 
-                {
+                ) {
                     message[key] = `${text}`;
-                } else if (text instanceof Error) 
-                {
+                } else if (text instanceof Error) {
                     message[key] = text.stack;
-                } else if (typeof text == "object") 
-                {
+                } else if (typeof text == "object") {
                     message[key] = JSON.stringify(text, null, 4);
-                } 
-                else if (text == undefined)
-                {
+                }
+                else if (text == undefined) {
                     message[key] = `undefined`;
                 }
             }
@@ -861,28 +843,22 @@ class Logger {
      * Adds timestamp.
      * 
      * @static
-     * @param {number|boolean|object|string} message - Message to log
+     * @param {any[]} message - Message to log
      */
     static warn(...message) {
-        if (_LOG_LEVEL >= 2) 
-        {
-            for (var key = 0; key < message.length; key++) 
-            {
+        if (_LOG_LEVEL >= 2) {
+            for (var key = 0; key < message.length; key++) {
                 const text = message[key];
                 if (typeof text == "number" ||
                     typeof text == "boolean"
-                ) 
-                {
+                ) {
                     message[key] = `${text}`;
-                } 
-                else if (text instanceof Error) 
-                {
+                }
+                else if (text instanceof Error) {
                     message[key] = text.stack;
-                } else if (typeof text == "object") 
-                {
+                } else if (typeof text == "object") {
                     message[key] = JSON.stringify(text, null, 4);
-                } else if (text == undefined) 
-                {
+                } else if (text == undefined) {
                     message[key] = `undefined`;
                 }
             }
@@ -903,31 +879,25 @@ class Logger {
      * Adds timestamp, filename and line.
      * 
      * @static
-     * @param {number|boolean|object|string} message - Message to log
+     * @param {any[]} message - Message to log
      */
     static debug(...message) {
-        if (_LOG_LEVEL >= 3) 
-        {
+        if (_LOG_LEVEL >= 3) {
 
-            for (var key = 0; key < message.length; key++) 
-                {
+            for (var key = 0; key < message.length; key++) {
                 const text = message[key];
                 if (typeof text == "number" ||
                     typeof text == "boolean"
-                ) 
-                {
+                ) {
                     message[key] = `${text}`;
-                } 
-                else if (text instanceof Error) 
-                {
+                }
+                else if (text instanceof Error) {
                     message[key] = text.stack;
-                } 
-                else if (typeof text == "object") 
-                {
+                }
+                else if (typeof text == "object") {
                     message[key] = JSON.stringify(text, null, 4);
                 }
-                else if (text == undefined) 
-                {
+                else if (text == undefined) {
                     message[key] = `undefined`;
                 }
             }
@@ -1066,14 +1036,12 @@ async function input(question, isPassword = false) {
 
     return new Promise((resolve, reject) => {
         try {
-            if(isPassword)
-            {
+            if (isPassword) {
                 password(questions).then(answer => {
                     resolve(answer);
                 });
             }
-            else
-            {
+            else {
                 inputs(questions).then(answer => {
                     resolve(answer);
                 });
@@ -1234,7 +1202,7 @@ async function choose(title, questions) {
 class Scheduler {
     runAt = new Date();
     interval = 0;
-    task = async ()=>{};
+    task = async () => { };
     nextCheck = "";
     schedulerFile = "";
     label = "Default task"; // Update channel lineup
@@ -1251,8 +1219,7 @@ class Scheduler {
 
         this.schedulerFile = schedulerFile;
 
-        if(!FS.fileExists(schedulerFile))
-        {
+        if (!FS.fileExists(schedulerFile)) {
             this.nextCheck = JSDate.getRFC1123DateString();
 
             const newFile = {
@@ -1262,8 +1229,7 @@ class Scheduler {
 
             FS.writeJSON(newFile, schedulerFile);
         }
-        else
-        {
+        else {
             const readFile = FS.readJSON(schedulerFile);
 
             this.interval = readFile.interval;
@@ -1273,32 +1239,29 @@ class Scheduler {
 
         this.runAt = new Date(this.nextCheck);
 
-        if (isNaN(this.runAt.getTime())) 
-        {
+        if (isNaN(this.runAt.getTime())) {
             Logger.error("Invalid Scheduler time string:", this.nextCheck);
             return;
         }
 
         this.label = label;
 
-        this.task = taskFn;   
+        this.task = taskFn;
     }
 
-    async scheduleNextRun(){
-        if(this.runAt.getTime() - JSDate.ct <= 0)
-        {
+    async scheduleNextRun() {
+        if (this.runAt.getTime() - JSDate.ct <= 0) {
             await this.runTask();
         }
         this.timeout = setInterval(async () => {
-            if(this.runAt.getTime() - JSDate.ct <= 0)
-            {
+            if (this.runAt.getTime() - JSDate.ct <= 0) {
                 await this.runTask();
             }
         }, 24 * 60 * 60 * 1000); // once a day
         return;
     }
 
-    async runTask(){
+    async runTask() {
         try {
             await this.task();
 
@@ -1323,7 +1286,7 @@ class Scheduler {
             return;
         }
     }
-    
+
     /**
      * Cancels the scheduled task.
      */
@@ -1376,7 +1339,7 @@ function _consoleLoadingBar(totalSteps, currentStep, withSize = false) {
     process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
     process.stdout.write(
         `${C_HEX.green}${loadingBar}${C_HEX.reset} - ${percentage.toFixed(2)}%` +
-        (withSize 
+        (withSize
             ? ` of ${_formatFileSize(totalSteps)} / ${_formatFileSize(currentStep)}`
             : ` - ${currentStep} of ${totalSteps}`)
     );
@@ -1407,6 +1370,7 @@ function _fileExists(filePath) {
         fs.accessSync(filePath, fs.constants.F_OK);
         return true;  // File exists
     } catch (error) {
+        // @ts-ignore
         if (error.code === 'ENOENT') {
             return false;  // File does not exist
         } else {
@@ -1435,9 +1399,9 @@ function _makeDirectory(dir) {
  * @param {{str:string}} current_string - Current string object
  * @param {string[]} current_array - array of local file paths
  */
-function _increase_path(dir, current_folder, current_string, current_array){
+function _increase_path(dir, current_folder, current_string, current_array) {
     var check = path.join(dir, current_folder);
-    if(fs.statSync(check).isDirectory()){
+    if (fs.statSync(check).isDirectory()) {
         current_string.str += current_folder + "/";
         const folders = fs.readdirSync(check);
         for (const key in folders) {
@@ -1481,12 +1445,12 @@ function _ensurePathExists(targetPath, fileData) {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
-            if(fileData){
+            if (fileData) {
                 // writes file data if supplied
                 fs.writeFileSync(targetPath, fileData);
             }
         }
-    } catch (err){
+    } catch (err) {
         Logger.error("Error checking path to write data.");
         Logger.error(targetPath);
         Logger.error(err)
@@ -1508,7 +1472,7 @@ class FS {
      * @param {string} srcPath - Path to test. Do NOT include a file name.
      * @returns {boolean} if directory exists.
      */
-    static directoryExists(srcPath){
+    static directoryExists(srcPath) {
         return _directoryExists(srcPath);
     };
 
@@ -1519,7 +1483,7 @@ class FS {
      * @param {string} srcPath - Full path to file including the file name.
      * @returns {boolean} if file exists.
      */
-    static fileExists(srcPath){
+    static fileExists(srcPath) {
         return _fileExists(srcPath);
     };
 
@@ -1529,8 +1493,8 @@ class FS {
      * @static
      * @param {string} srcPath - Path to create. Do NOT include a file name.
      */
-    static createDirectory(srcPath){
-        if(!_directoryExists(srcPath)){
+    static createDirectory(srcPath) {
+        if (!_directoryExists(srcPath)) {
             _makeDirectory(srcPath);
         }
     };
@@ -1556,23 +1520,27 @@ class FS {
     static readDirectoryFolders(folderPath, fullPath = false) {
         try {
             const file = fs.readdirSync(folderPath);
-            if(!fullPath){
+            if (!fullPath) {
                 return file
-                .filter(item => {
-                    const itemPath = path.join(folderPath, item);
-                    return fs.statSync(itemPath).isDirectory();
-                });
+                    .filter(item => {
+                        const itemPath = path.join(folderPath, item);
+                        return fs.statSync(itemPath).isDirectory();
+                    });
             } else {
+                /**
+                 * @type {string[]} 
+                 */
                 const list = [];
                 file.forEach(item => {
                     const itemPath = path.join(folderPath, item);
-                    if(fs.statSync(itemPath).isDirectory()){
+                    if (fs.statSync(itemPath).isDirectory()) {
                         list.push(itemPath);
                     }
                 });
                 return list;
             }
         } catch (error) {
+            // @ts-ignore
             Logger.error(`Error reading the folder: ${error.message}`);
             return [];
         }
@@ -1598,34 +1566,38 @@ class FS {
     static readDirectoryFiles(folderPath, fullPath = false, only_type = undefined) {
         try {
             const file = fs.readdirSync(folderPath);
-            if(!fullPath){
+            if (!fullPath) {
                 return file
                     .filter(item => {
                         const itemPath = path.join(folderPath, item);
                         const Ext = path.extname(itemPath);
-                        if(only_type){
+                        if (only_type) {
                             return fs.statSync(itemPath).isFile() && Ext == only_type;
                         } else {
                             return fs.statSync(itemPath).isFile();
                         }
                     });
-            } else{
+            } else {
+                /**
+                 * @type {string[]} 
+                 */
                 const list = [];
                 file.forEach(item => {
                     const itemPath = path.join(folderPath, item);
                     const Ext = path.extname(itemPath);
-                    if(only_type){
-                        if(Ext == only_type && fs.statSync(itemPath).isFile()){
+                    if (only_type) {
+                        if (Ext == only_type && fs.statSync(itemPath).isFile()) {
                             list.push(itemPath);
                         }
-                    } else 
-                    if(fs.statSync(itemPath).isFile()){
-                        list.push(itemPath);
-                    }
+                    } else
+                        if (fs.statSync(itemPath).isFile()) {
+                            list.push(itemPath);
+                        }
                 });
                 return list;
             }
         } catch (error) {
+            // @ts-ignore
             Logger.error(`Error reading the folder: ${error.message}`);
             return [];
         }
@@ -1650,14 +1622,17 @@ class FS {
      * @param {string} directory directory to return all file paths in
      * @returns {string[]} path to files
      */
-    static readDirectoryAndFiles(directory){
+    static readDirectoryAndFiles(directory) {
         const starting_folder = fs.readdirSync(directory);
+        /**
+         * @type {string[]} 
+         */
         const finished_array = [];
         for (const key in starting_folder) {
             if (Object.prototype.hasOwnProperty.call(starting_folder, key)) {
                 const folder = starting_folder[key];
-                const str = {str:""};
-                _increase_path(directory,folder,str,finished_array);
+                const str = { str: "" };
+                _increase_path(directory, folder, str, finished_array);
             }
         }
         return finished_array;
@@ -1702,12 +1677,13 @@ class FS {
      * @param {string} srcPath - Full path to file including the file name.
      * @throws {Error} if data is not writable.
      */
-    static writeFile(data, srcPath){;
+    static writeFile(data, srcPath) {
+        ;
         // stringify if needed
-        if(typeof data == "object" && !(data instanceof Buffer)){
-            data = JSON.stringify(data,null,2);
+        if (typeof data == "object" && !(data instanceof Buffer)) {
+            data = JSON.stringify(data, null, 2);
         }
-        if(data instanceof Buffer || typeof data == "string"){
+        if (data instanceof Buffer || typeof data == "string") {
             _ensurePathExists(srcPath, data);
         } else {
             Logger.error("Data supplied to be written was not in a JSON format");
@@ -1723,13 +1699,13 @@ class FS {
      * @returns {Buffer} Buffer of data
      * @throws {Error} if file doesn't exist
      */
-    static readFile(srcPath){
+    static readFile(srcPath) {
         const dir = path.dirname(srcPath);
-        if(!_directoryExists(dir)){
+        if (!_directoryExists(dir)) {
             Logger.error("Can not find folder to file being read: " + srcPath);
             exit();
         }
-        if(!_fileExists(srcPath)){
+        if (!_fileExists(srcPath)) {
             Logger.error("Can not find file being read: " + srcPath);
             exit();
         }
@@ -1741,17 +1717,17 @@ class FS {
      * 
      * @static
      * @param {string} srcPath - Full path to file including the file name.
-     * @returns {object} data
+     * @returns {any} data
      * @throws {Error} if file doesn't exist
      */
-    static readJSON(srcPath){
+    static readJSON(srcPath) {
         const dir = path.dirname(srcPath);
-        if(!_directoryExists(dir)){
+        if (!_directoryExists(dir)) {
             Logger.error("Can not find folder to file being read: " + srcPath);
             exit();
             return;
         }
-        if(!_fileExists(srcPath)){
+        if (!_fileExists(srcPath)) {
             Logger.error("Can not find file being read: " + srcPath);
             exit();
             return;
@@ -1773,7 +1749,7 @@ class FS {
      * @param {string} srcPath - Full path to file including the file name with .json ext.
      * @throws {Error} if data is not writable.
      */
-    static writeJSON(data, srcPath){
+    static writeJSON(data, srcPath) {
         this.writeFile(data, srcPath);
     };
 
@@ -1793,7 +1769,7 @@ class FS {
      * @param {boolean|undefined} witchSize - Converts amounts to file size
      * @returns {number}
      */
-    static loadingBar(totalSteps, currentStep, witchSize = false){
+    static loadingBar(totalSteps, currentStep, witchSize = false) {
         return _consoleLoadingBar(totalSteps, currentStep, witchSize);
     };
 };
@@ -1989,9 +1965,8 @@ class MersenneTwister {
  * @param {string} msg - content of message, use "" for none.
  * @param {string} date - Human readable string
  */
-function makeDeviceAuth(method, url, msg, date){
-    if(msg != "")
-    {
+function makeDeviceAuth(method, url, msg, date) {
+    if (msg != "") {
         const MD5 = createHash("md5").update(msg);
         msg = MD5.digest('hex').toLowerCase();
     }
@@ -2009,12 +1984,12 @@ function makeDeviceAuth(method, url, msg, date){
  * @param {string} host 
  * @param {string} path 
  * @param {string} msg 
- * @param {object} headers 
- * @param {object} params 
+ * @param {{"Content-Type"?:string,Connection?:string,Date?:string,Accept?:string,"User-Agent"?:string,"Content-Length"?:string,Authorization?:string}} headers 
+ * @param {Record<string, string>} params 
  * @returns {Promise<Buffer>}
  */
-async function makeTabloRequest(method, host, path, msg = "", headers = {}, params = {}){
-    
+async function makeTabloRequest(method, host, path, msg = "", headers = {}, params = {}) {
+
     const url = host + path;
     const baseUrl = new URL(path, host);
     const searchParams = new URLSearchParams(params);
@@ -2026,8 +2001,7 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
     headers["User-Agent"] = "Tablo-FAST/1.7.0 (Mobile; iPhone; iOS 18.4)";
     const auth = makeDeviceAuth(method, path, msg, date);
     var body;
-    if(method == "POST" && msg != "")
-    {
+    if (method == "POST" && msg != "") {
         body = Buffer.from(msg);
         headers["Content-Length"] = `${body.length}`;
     }
@@ -2039,16 +2013,15 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
             headers: headers,
             body: method == "POST" ? body : undefined
         }
-    ).then(async response =>{
-        if(response){
+    ).then(async response => {
+        if (response) {
             return Buffer.from(await response.arrayBuffer())
         }
-        else
-        {
+        else {
             Logger.error(`\x1b[31m[Error]\x1b[0m: Fetching device ${url}`);
             return Buffer.alloc(0);
         }
-    }); 
+    });
 }
 
 /**
@@ -2060,49 +2033,50 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
  * @param {string} UUID
  * @returns 
  */
-async function reqTabloDevice(method, host, path, UUID){
+async function reqTabloDevice(method, host, path, UUID) {
     const headers = {};
+    /**
+     * @type {any}
+     */
     const dataIn = {};
-    if(method == "POST")
-    {
+    if (method == "POST") {
         headers["Content-Type"] = "application/x-www-form-urlencoded";
         dataIn["bandwidth"] = null;
         dataIn["device_id"] = UUID;
         dataIn["extra"] = {
-            "deviceId":"00000000-0000-0000-0000-000000000000",
-            "deviceOS":"iOS",
-            "deviceMake":"Apple",
-            "height":1080,
-            "deviceOSVersion":"16.6",
+            "deviceId": "00000000-0000-0000-0000-000000000000",
+            "deviceOS": "iOS",
+            "deviceMake": "Apple",
+            "height": 1080,
+            "deviceOSVersion": "16.6",
             "width": 1920,
-            "lang":"en_US",
-            "limitedAdTracking":1,
-            "deviceModel":"iPhone10,1"
+            "lang": "en_US",
+            "limitedAdTracking": 1,
+            "deviceModel": "iPhone10,1"
         };
         dataIn["platform"] = "ios";
     }
     return await makeTabloRequest(method, host, path, method == "POST" ? JSON.stringify(dataIn) : "", headers);
 }
 
-class Encryption{
-    constructor(){}
+class Encryption {
+    constructor() { }
     /**
      * 
      * @param {string} creds - stringified creds
      * @returns {Buffer}
      */
-    static crypt(creds){
-        const RSA = process.env.RSA == undefined ? 
+    static crypt(creds) {
+        const RSA = process.env.RSA == undefined ?
             "30818902818100B507AAAC6B6B1BA5CE02B8512381159ECFD9CD32D6EEADCAFF459EA7E2210819C2D915F437E30871DDA190F19B8898038E1E7863A21699CDA5BC6C84C49D935AFAFFE1D2F16B0C662DC8941D8751FB7A36AC22F5980EDF92FCF7756FC6FCFD967A73303C7CD7030C681799C18E0A2F2D2B69C9F7BD8ADE05731BB179F354F0E90203010001" :
             process.env.RSA;
         const buff = Buffer.from(RSA, "hex");
-        const keyBuff = Buffer.alloc(32,0);
-        for (let i = 0; i < buff.length/4; i++) 
-        {
-            const el1 = buff.readUInt32LE(i*4);
+        const keyBuff = Buffer.alloc(32, 0);
+        for (let i = 0; i < buff.length / 4; i++) {
+            const el1 = buff.readUInt32LE(i * 4);
             const inner = i % (keyBuff.length / 4);
-            const num = keyBuff.readInt32LE(inner*4);
-            keyBuff.writeInt32LE(num ^ el1, inner*4);
+            const num = keyBuff.readInt32LE(inner * 4);
+            keyBuff.writeInt32LE(num ^ el1, inner * 4);
         }
         const setup = new MersenneTwister();
         const seed = setup.random_int();
@@ -2112,8 +2086,8 @@ class Encryption{
         const pull = mt.random_int();
         const amount = (pull & 15) + 1;
         for (let i = 0; i < amount; i++) mt.random_int();
-        const ivBuff = Buffer.alloc(16,0);
-        for (let i = 0; i < (16/4); i++) ivBuff.writeUInt32LE(mt.random_int(), i*4);
+        const ivBuff = Buffer.alloc(16, 0);
+        for (let i = 0; i < (16 / 4); i++) ivBuff.writeUInt32LE(mt.random_int(), i * 4);
         const cipher = createCipheriv("aes-256-cbc", keyBuff, ivBuff);
         cipher.setAutoPadding(true);
         cipher.write(creds);
@@ -2127,29 +2101,28 @@ class Encryption{
      * @param {Buffer} creds - file buffer of creds
      * @returns {Buffer}
      */
-    static decrypt(creds){
-        const RSA = process.env.RSA == undefined ? 
+    static decrypt(creds) {
+        const RSA = process.env.RSA == undefined ?
             "30818902818100B507AAAC6B6B1BA5CE02B8512381159ECFD9CD32D6EEADCAFF459EA7E2210819C2D915F437E30871DDA190F19B8898038E1E7863A21699CDA5BC6C84C49D935AFAFFE1D2F16B0C662DC8941D8751FB7A36AC22F5980EDF92FCF7756FC6FCFD967A73303C7CD7030C681799C18E0A2F2D2B69C9F7BD8ADE05731BB179F354F0E90203010001" :
             process.env.RSA;
         const buff = Buffer.from(RSA, "hex");
-        const keyBuff = Buffer.alloc(32,0);
-        for (let i = 0; i < buff.length/4; i++) 
-        {
-            const el1 = buff.readUInt32LE(i*4);
+        const keyBuff = Buffer.alloc(32, 0);
+        for (let i = 0; i < buff.length / 4; i++) {
+            const el1 = buff.readUInt32LE(i * 4);
             const inner = i % (keyBuff.length / 4);
-            const num = keyBuff.readInt32LE(inner*4);
-            keyBuff.writeInt32LE(num ^ el1,inner*4);
+            const num = keyBuff.readInt32LE(inner * 4);
+            keyBuff.writeInt32LE(num ^ el1, inner * 4);
         }
         const seed = creds.readUInt32LE();
         const mt = new MersenneTwister(seed ^ 0xffffffff);
         const pull = mt.random_int();
         const amount = (pull & 15) + 1;
         for (let i = 0; i < amount; i++) mt.random_int();
-        const ivBuff = Buffer.alloc(16,0);
-        for (let i = 0; i < (16/4); i++) ivBuff.writeUInt32LE(mt.random_int(),i*4);
+        const ivBuff = Buffer.alloc(16, 0);
+        for (let i = 0; i < (16 / 4); i++) ivBuff.writeUInt32LE(mt.random_int(), i * 4);
         const cipher = createDecipheriv("aes-256-cbc", keyBuff, ivBuff);
         cipher.setAutoPadding(true);
-        cipher.write(creds.subarray(4,creds.length));
+        cipher.write(creds.subarray(4, creds.length));
         cipher.end();
         return cipher.read();
     }
@@ -2167,12 +2140,10 @@ class Encryption{
 async function makeHTTPSRequest(method, hostname, path, headers, data = "") {
     return new Promise((resolve, reject) => {
         // Convert the data
-        if(typeof data == "string")
-        {
+        if (typeof data == "string") {
             data = Buffer.from(data);
         }
-        else if(!(data instanceof Buffer))
-        {
+        else if (!(data instanceof Buffer)) {
             data = Buffer.from(JSON.stringify(data));
         }
         headers['Content-Length'] = Buffer.byteLength(data);
@@ -2204,6 +2175,7 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "") {
                 try {
                     resolve(dataIn);
                 } catch (parseError) {
+                    // @ts-ignore
                     reject(new Error(`Failed to parse response: ${parseError.message}`));
                 }
             });
@@ -2214,12 +2186,11 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "") {
             reject(error);
         });
 
-        if(method == "POST")
-        {
+        if (method == "POST") {
             // Write data to request body
             req.write(data);
         }
-        
+
         // End the request
         req.end();
     });
@@ -2295,6 +2266,9 @@ function _hex_string_to_Buffer(hexString) {
  * @returns {string|Buffer} string
  */
 function UUID(version = 4, options = {}, asBuffer = false) {
+    /**
+     * @type {Uint8Array|Buffer}
+     */
     var buff;
     const seed = options && options.seed;
     const mac = options && options.mac;
@@ -2336,6 +2310,7 @@ function UUID(version = 4, options = {}, asBuffer = false) {
         case 5:
             var fakeMacBytes = new Uint8Array(6);
             if (mac != undefined) {
+                // @ts-ignore
                 fakeMacBytes = mac;
             }
             else {
@@ -2483,6 +2458,8 @@ module.exports = {
     GUIDE_DAYS,
     DIR_NAME,
     SERVER_URL,
+    NAME,
+    DEVICE_ID,
 
     makeHTTPSRequest,
     reqTabloDevice,

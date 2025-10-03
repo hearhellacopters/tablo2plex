@@ -24,6 +24,8 @@ const {
     CREATE_XML,
     DIR_NAME,
     SERVER_URL,
+    NAME,
+    DEVICE_ID,
 
     makeHTTPSRequest,
     reqTabloDevice,
@@ -177,7 +179,7 @@ var GUIDE;
  * @param {express.NextFunction} next 
  * @param {string} port
  */
-async function _middleware(req, res, next, port){
+async function _middleware(req, res, next, port) {
     const ip = req.ip;
 
     const path = req.path;
@@ -192,17 +194,14 @@ async function _middleware(req, res, next, port){
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
 
-    if(!(path == "/discover.json" || path == "/lineup_status.json"))
-    {
-        Logger.debug(`Req ${ip && ip.replace(/::ffff:/,"")}:${port}${path}`);
+    if (!(path == "/discover.json" || path == "/lineup_status.json")) {
+        Logger.debug(`Req ${ip && ip.replace(/::ffff:/, "")}:${port}${path}`);
     }
 
-    if(req.method === 'OPTIONS')
-    {
+    if (req.method === 'OPTIONS') {
         res.status(204).send('');
     }
-    else
-    {
+    else {
         next(); // Move to the next middleware or route handler
     }
 
@@ -217,7 +216,7 @@ async function _middleware(req, res, next, port){
  * @param {string} serverURL 
  * @param {string} DeviceID 
  */
-async function _discover(req, res, name, serverURL, DeviceID){
+async function _discover(req, res, name, serverURL, DeviceID) {
     const discover = {
         FriendlyName: name, // "Tablo 4th Gen Proxy",
         Manufacturer: "tablo2plex",
@@ -232,7 +231,7 @@ async function _discover(req, res, name, serverURL, DeviceID){
     };
 
     const headers = {
-        'Content-Type': 'application/json' 
+        'Content-Type': 'application/json'
     };
 
     res.writeHead(200, headers);
@@ -247,17 +246,17 @@ async function _discover(req, res, name, serverURL, DeviceID){
  * @param {express.Request} req 
  * @param {express.Response} res 
  */
-async function _lineup(req, res){
+async function _lineup(req, res) {
     var lineup = Object.values(LINEUP_DATA);
 
     const headers = {
-        'Content-Type': 'application/json' 
+        'Content-Type': 'application/json'
     };
 
     res.writeHead(200, headers);
 
     res.end(JSON.stringify(lineup));
-    
+
     return;
 }
 
@@ -266,7 +265,7 @@ async function _lineup(req, res){
  * @param {express.Request} req 
  * @param {express.Response} res 
  */
-async function _lineup_status(req, res){
+async function _lineup_status(req, res) {
     const lineup_status = {
         ScanInProgress: 0,
         ScanPossible: 1,
@@ -275,10 +274,10 @@ async function _lineup_status(req, res){
     };
 
     const headers = {
-        'Content-Type': 'application/json'  
+        'Content-Type': 'application/json'
     };
 
-    res.writeHead(200,headers);
+    res.writeHead(200, headers);
 
     res.end(JSON.stringify(lineup_status));
 
@@ -290,25 +289,23 @@ async function _lineup_status(req, res){
  * @param {express.Request} req 
  * @param {express.Response} res 
  */
-async function _channel(req, res){
+async function _channel(req, res) {
     const ip = req.ip;
 
     const channelId = req.params.channelId;
 
     const selectedChannel = LINEUP_DATA[channelId];
 
-    if(selectedChannel)
-    {
-        if(selectedChannel.type == "ott")
-        {
+    if (selectedChannel) {
+        if (selectedChannel.type == "ott") {
             // request from internet
             try {
                 const ffmpeg = spawn('ffmpeg', [
-                '-i', selectedChannel.srcURL,
-                '-c', 'copy',
-                '-f', 'mpegts',
-                '-v', 'repeat+level+panic',
-                'pipe:1'
+                    '-i', selectedChannel.srcURL,
+                    '-c', 'copy',
+                    '-f', 'mpegts',
+                    '-v', 'repeat+level+panic',
+                    'pipe:1'
                 ]);
 
                 res.setHeader('Content-Type', 'video/mp2t');
@@ -327,6 +324,7 @@ async function _channel(req, res){
 
                 return;
             } catch (error) {
+                // @ts-ignore
                 Logger.error('Error starting stream:', error.message);
 
                 res.status(500).send('Failed to start stream');
@@ -334,30 +332,28 @@ async function _channel(req, res){
                 return;
             }
         }
-        else if(selectedChannel.type == "ota")
-        {
+        else if (selectedChannel.type == "ota") {
             // request from device
-            if( CURRENT_STREAMS < TUNER_COUNT )
-            {
+            if (CURRENT_STREAMS < TUNER_COUNT) {
                 const firstReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID);
 
                 try {
                     var firstJSON = JSON.parse(firstReq.toString());
 
                     const ffmpeg = spawn('ffmpeg', [
-                    '-i', firstJSON.playlist_url,
-                    '-c', 'copy',
-                    '-f', 'mpegts',
-                    '-v', 'repeat+level+panic',
-                    'pipe:1'
+                        '-i', firstJSON.playlist_url,
+                        '-c', 'copy',
+                        '-f', 'mpegts',
+                        '-v', 'repeat+level+panic',
+                        'pipe:1'
                     ]);
 
                     CURRENT_STREAMS += 1;
 
-                    Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/,"")} connected to ${channelId}, spawning ffmpeg stream.`);
+                    Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/, "")} connected to ${channelId}, spawning ffmpeg stream.`);
 
                     res.setHeader('Content-Type', 'video/mp2t');
-                    
+
                     ffmpeg.stdout.pipe(res);
 
                     ffmpeg.stderr.on('data', (data) => {
@@ -367,13 +363,14 @@ async function _channel(req, res){
                     req.on('close', () => {
                         CURRENT_STREAMS -= 1;
 
-                        Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/,"")} disconnected from ${channelId}, killing ffmpeg`);
+                        Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/, "")} disconnected from ${channelId}, killing ffmpeg`);
 
                         ffmpeg.kill('SIGINT');
                     });
 
                     return;
                 } catch (error) {
+                    // @ts-ignore
                     Logger.error('Error starting stream:', error.message);
 
                     res.status(500).send('Failed to start stream');
@@ -381,18 +378,16 @@ async function _channel(req, res){
                     return;
                 }
             }
-            else
-            {
-                Logger.error(`Client ${ip && ip.replace(/::ffff:/,"")} connected to ${channelId}, but max streams are running.`);
+            else {
+                Logger.error(`Client ${ip && ip.replace(/::ffff:/, "")} connected to ${channelId}, but max streams are running.`);
 
                 res.status(500).send('Failed to start stream');
 
                 return;
             }
-        } 
+        }
     }
-    else
-    {
+    else {
         res.status(404).send('Channel not found');
 
         return;
@@ -404,7 +399,7 @@ async function _channel(req, res){
  * @param {express.Request} req 
  * @param {express.Response} res 
  */
-async function _guide_serve(req, res){
+async function _guide_serve(req, res) {
     try {
         const data = FS.readFile(GUIDE_FILE);
 
@@ -412,7 +407,7 @@ async function _guide_serve(req, res){
             "content-type": "application/xml"
         }
 
-        res.writeHead(200,headers);
+        res.writeHead(200, headers);
 
         res.end(data);
 
@@ -434,53 +429,50 @@ async function _run_server() {
 
         await exit();
     }
-    else
-    {
+    else {
         const app = express();
 
         app.set('trust proxy', true);
 
         // Middleware to log requests by IP and path
         app.use(async (req, res, next) => {
-           return await _middleware(req, res, next, PORT);
+            return await _middleware(req, res, next, PORT);
         });
 
         // everything gets routed here to route.
         app.get("/discover.json", async (req, res) => {
-            return await _discover(req, res, "Tablo 4th Gen Proxy", SERVER_URL, "12345678");
+            return await _discover(req, res, NAME, SERVER_URL, DEVICE_ID);
         })
 
-        app.get("/lineup.json", async (req, res) =>{
+        app.get("/lineup.json", async (req, res) => {
             return await _lineup(req, res);
         })
 
-        app.get("/lineup_status.json", async (req, res) =>{
+        app.get("/lineup_status.json", async (req, res) => {
             return await _lineup_status(req, res);
-        })       
+        })
 
         app.get("/channel/:channelId", async (req, res) => {
             return await _channel(req, res);
         })
 
-        if(CREATE_XML)
-        {
-            app.get("/guide.xml", async (req, res) =>{
+        if (CREATE_XML) {
+            app.get("/guide.xml", async (req, res) => {
                 return await _guide_serve(req, res);
             })
         }
 
-        app.get("/favicon.ico", async (req, res) =>{
+        app.get("/favicon.ico", async (req, res) => {
             res.end("");
         })
 
         // Start the server
         app.listen(PORT, () => {
             Logger.info(`Server is running on ${C_HEX.blue}${SERVER_URL}${C_HEX.reset} with ${TUNER_COUNT} tuners`);
-            if(CREATE_XML)
-            {
+            if (CREATE_XML) {
                 Logger.info(`Guide data can be found at ${C_HEX.blue}${SERVER_URL}/guide.xml${C_HEX.reset}`);
 
-                const guideLoc = path.join(DIR_NAME,"guide.xml");
+                const guideLoc = path.join(DIR_NAME, "guide.xml");
 
                 Logger.info(`or ${C_HEX.blue}${guideLoc}${C_HEX.reset}`);
             }
@@ -488,14 +480,13 @@ async function _run_server() {
     }
 };
 
-async function reqCreds()
-{
+async function reqCreds() {
     /**
      * @type {masterCreds}
      */
     const masterCreds = {};
 
-    var loggedIn = false; 
+    var loggedIn = false;
 
     var loginCreds;
 
@@ -525,42 +516,36 @@ async function reqCreds()
 
         headers['Accept'] = '*/*';
 
-        const retData = await makeHTTPSRequest("POST",host, path, headers, JSON.stringify(credsData));
+        const retData = await makeHTTPSRequest("POST", host, path, headers, JSON.stringify(credsData));
 
         try {
             loginCreds = JSON.parse(retData);
 
-            if(loginCreds.code == undefined)
-            {
-                if(loginCreds.is_verified != true)
-                {
+            if (loginCreds.code == undefined) {
+                if (loginCreds.is_verified != true) {
                     Logger.info(`${C_HEX.blue}NOTE:${C_HEX.reset} While password was accepted, account is not verified.\nPlease check email to make sure your account is fully set up. There may be issues later.`);
                 }
-                if(loginCreds.token_type != undefined && loginCreds.access_token != undefined)
-                {
+                if (loginCreds.token_type != undefined && loginCreds.access_token != undefined) {
                     Logger.info(`Loggin was accepted!`);
 
                     loginCreds.Authorization = `${loginCreds.token_type} ${loginCreds.access_token}`;
 
                     loggedIn = true;
-                }  
+                }
             }
-            else
-            {
-                if(loginCreds.code)
-                {
+            else {
+                if (loginCreds.code) {
                     Logger.error(`Loggin was not accepted: ${loginCreds.message}`);
                 }
-                else
-                {
+                else {
                     Logger.error(`Loggin was not successful, try again later!`);
 
                     return await exit();
-                } 
+                }
             }
         } catch (error) {
             Logger.error(`Loggin was not accepted or had issues, try again!`);
-        } 
+        }
     } while (!loggedIn);
     // we should have access_token and token_type by now
     const lighthousetvAuthorization = loginCreds.Authorization;
@@ -572,7 +557,7 @@ async function reqCreds()
     headers["Authorization"] = lighthousetvAuthorization;
 
     var selectedDevice = false;
-    
+
     var deviceData;
 
     do {
@@ -581,66 +566,57 @@ async function reqCreds()
         try {
             deviceData = JSON.parse(retData);
 
-            if(deviceData.identifier == undefined)
-            {
+            if (deviceData.identifier == undefined) {
                 Logger.error(`User identifier missing from return. Please check your account and try again.`);
 
                 return await exit();
             }
-            else
-            {
+            else {
                 masterCreds.lighthousetvIdentifier = deviceData.identifier;
             }
 
-            if(deviceData.code == undefined)
-            {
+            if (deviceData.code == undefined) {
                 // lets get the profile
-                if(deviceData.profiles == undefined)
-                {
+                if (deviceData.profiles == undefined) {
                     Logger.error(`User profile data missing from return. Please check your account and try again.`);
 
                     return await exit();
                 }
-                else if(deviceData.profiles.length == 1)
-                {
+                else if (deviceData.profiles.length == 1) {
                     const profile = deviceData.profiles[0];
 
                     masterCreds.profile = profile;
 
                     Logger.info(`Using profile ${profile.name}`);
                 }
-                else
-                {
+                else {
                     // lets select which profile we want to use
                     const list = [];
 
-                    for (let i = 0; i < deviceData.profiles.length; i++) 
-                    {
+                    for (let i = 0; i < deviceData.profiles.length; i++) {
                         const el = deviceData.profiles[i];
 
                         list.push(
-                            {value: el.name}
+                            { value: el.name }
                         );
                     }
 
                     const answer = await choose("Select which profile to use.", list);
 
-                    const profile = deviceData.profiles.find((el) => el.name == answer);
-                    
+                    const profile = deviceData.profiles.find((/**@type {{name:string}}*/el) => el.name == answer);
+
                     masterCreds.profile = profile;
 
                     Logger.info(`Using profile ${profile.name}`);
                 }
 
                 // lets get the device
-                if(deviceData.devices == undefined)
-                {
+                if (deviceData.devices == undefined) {
                     Logger.error(`User device data missing from return. Please check your account and try again.`);
 
                     return await exit();
                 }
-                else if(deviceData.devices.length == 1)
-                {
+                else if (deviceData.devices.length == 1) {
                     const device = deviceData.devices[0];
 
                     masterCreds.device = device;
@@ -649,24 +625,22 @@ async function reqCreds()
 
                     selectedDevice = true;
                 }
-                else
-                {
+                else {
                     // lets select which device we want to use
                     const list = [];
 
-                    for (let i = 0; i < deviceData.devices.length; i++) 
-                    {
+                    for (let i = 0; i < deviceData.devices.length; i++) {
                         const el = deviceData.devices[i];
 
                         list.push(
-                            {value: el.serverId}
+                            { value: el.serverId }
                         );
                     }
 
                     const answer = await choose("Select which device to use with Plex.", list);
 
-                    const device = deviceData.devices.find((el) => el.serverId == answer);
-                    
+                    const device = deviceData.devices.find((/**@type {{serverId:string}}*/el) => el.serverId == answer);
+
                     masterCreds.device = device;
 
                     Logger.info(`Using device ${device.name} ${device.serverId} @ ${device.url}`);
@@ -674,18 +648,15 @@ async function reqCreds()
                     selectedDevice = true;
                 }
             }
-            else
-            {
-                if(deviceData.code)
-                {
+            else {
+                if (deviceData.code) {
                     Logger.error(`Account loggin was not accepted: ${deviceData.message}`);
                 }
-                else
-                {
+                else {
                     Logger.error(`Account loggin was not successful, try again!`);
 
                     return await exit();
-                } 
+                }
             }
         } catch (error) {
             Logger.error(`Account loggin was not accepted or had issues, try again!`);
@@ -713,16 +684,14 @@ async function reqCreds()
         try {
             lighthouseData = JSON.parse(retData);
 
-            if(lighthouseData.token != undefined)
-            {
+            if (lighthouseData.token != undefined) {
                 Logger.info(`Account token found!`);
 
                 masterCreds.Lighthouse = lighthouseData.token;
 
                 gotLighthouse = true;
             }
-            else
-            {
+            else {
                 Logger.error(`Account token was not found, try again!`);
 
                 return await exit();
@@ -737,17 +706,16 @@ async function reqCreds()
 
     const uuid = UUID();
 
-    masterCreds.UUID =  typeof uuid == "string" ? uuid : "";
+    masterCreds.UUID = typeof uuid == "string" ? uuid : "";
 
     Logger.info(`Connecting to device.`);
 
-    const firstReq = await reqTabloDevice("GET", masterCreds.device.url,`/server/info`, masterCreds.UUID);
+    const firstReq = await reqTabloDevice("GET", masterCreds.device.url, `/server/info`, masterCreds.UUID);
 
     try {
         const reqPars = JSON.parse(firstReq.toString());
 
-        if(reqPars && reqPars.model && reqPars.model.tuners)
-        {
+        if (reqPars && reqPars.model && reqPars.model.tuners) {
             masterCreds.tuners = reqPars.model.tuners;
 
             Logger.info(`Found ${reqPars.model.name} with ${masterCreds.tuners} max tuners found!`);
@@ -771,14 +739,13 @@ async function reqCreds()
     return 1;
 };
 
-async function readCreds(){
-    if(CREDS_DATA == undefined){
+async function readCreds() {
+    if (CREDS_DATA == undefined) {
         const masterCreds = FS.readFile(CREDS_FILE);
 
         const encryCreds = Encryption.decrypt(masterCreds);
 
-        if(encryCreds[0] != 0x7B)
-        {
+        if (encryCreds[0] != 0x7B) {
             try {
                 Logger.error("Issue decrypting creds file. Removing creds file. Please start app again or use --creds command line to create a new file.");
 
@@ -808,8 +775,7 @@ async function readCreds(){
             }
         }
     }
-    else
-    {
+    else {
         return;
     }
 }
@@ -818,7 +784,7 @@ async function readCreds(){
  * 
  * @param {channelLineup[]} lineUp 
  */
-async function parseGuideData(lineUp){
+async function parseGuideData(lineUp) {
     try {
         const guideDays = JSDate.getDaysFromToday(GUIDE_DAYS);
 
@@ -829,7 +795,7 @@ async function parseGuideData(lineUp){
         xw.startElement('tv');
 
         xw.writeAttribute('generator-info-name', 'Tablo 4th Gen Proxy');
-        
+
         for (let i = 0; i < lineUp.length; i++) {
             const el = lineUp[i];
 
@@ -838,8 +804,7 @@ async function parseGuideData(lineUp){
 
             var channelNum = "";
 
-            if(el.kind == "ota")
-            {
+            if (el.kind == "ota") {
                 channelNum = `${el.ota.major}.${el.ota.minor}`;
 
                 xw.writeAttribute('id', channelNum);
@@ -852,8 +817,7 @@ async function parseGuideData(lineUp){
 
                 xw.endElement(); // display-name
             }
-            else
-            {
+            else {
                 channelNum = `${el.ott.major}.${el.ott.minor}`;
 
                 xw.writeAttribute('id', channelNum);
@@ -870,14 +834,12 @@ async function parseGuideData(lineUp){
             if (el.logos.length != 0) {
                 xw.startElement('icon');
 
-                const lightLarge = el.logos.find(self=>self.kind == "lightLarge");
+                const lightLarge = el.logos.find(self => self.kind == "lightLarge");
 
-                if(lightLarge)
-                {
+                if (lightLarge) {
                     xw.writeAttribute('src', lightLarge.url);
                 }
-                else
-                {
+                else {
                     xw.writeAttribute('src', el.logos[0].url);
                 }
 
@@ -906,7 +868,7 @@ async function parseGuideData(lineUp){
                  * @type {guideInfo[]}
                  */
                 const tdData = FS.readJSON(fileTD);
-                
+
                 filesData.push(tdData);
 
                 totalForChannel += tdData.length;
@@ -915,22 +877,19 @@ async function parseGuideData(lineUp){
             Logger.info(`Creating ${el.name} - ${channelNum} guide data.`);
 
             //write programme
-            for(let q = 0; q < filesData.length; q++)
-            {
+            for (let q = 0; q < filesData.length; q++) {
                 const tdData = filesData[q];
 
-                for (let z = 0; z < tdData.length; z++) 
-                {
+                for (let z = 0; z < tdData.length; z++) {
                     const tdEL = tdData[z];
 
                     const end = new Date(tdEL.datetime).getTime() + (tdEL.duration * 1000);
 
-                    if(end > Date.now())
-                    {
+                    if (end > Date.now()) {
                         const startDate = JSDate.getXMLDateString(tdEL.datetime);
 
                         const endDate = JSDate.getXMLDateString(end);
-                        
+
                         // parse data
                         xw.startElement('programme');
 
@@ -944,10 +903,9 @@ async function parseGuideData(lineUp){
 
                         xw.writeAttribute('lang', 'en');
 
-                        if( tdEL.kind == "episode" &&
+                        if (tdEL.kind == "episode" &&
                             tdEL.episode.episodeNumber != null
-                        )
-                        {
+                        ) {
 
                             xw.text(tdEL.show.title.replace(/[\n\r]+/g, " "));
 
@@ -958,7 +916,7 @@ async function parseGuideData(lineUp){
                             xw.startElement('sub-title');
 
                             xw.writeAttribute('lang', 'en');
-                            
+
                             xw.text(tdEL.title.replace(/[\n\r]+/g, " "));
 
                             xw.endElement(); // sub-title
@@ -969,10 +927,9 @@ async function parseGuideData(lineUp){
 
                             var season = 1;
 
-                            if( tdEL.episode.season.kind != "none" &&
-                                tdEL.episode.season.kind != "number" 
-                            )
-                            {
+                            if (tdEL.episode.season.kind != "none" &&
+                                tdEL.episode.season.kind != "number"
+                            ) {
                                 season = Number(tdEL.episode.season.number);
                             }
 
@@ -980,15 +937,13 @@ async function parseGuideData(lineUp){
 
                             xw.endElement(); // episode-num
                         }
-                        else
-                        {
+                        else {
                             xw.text(tdEL.title.replace(/[\n\r]+/g, " "));
 
                             xw.endElement(); // title
                         }
 
-                        if(tdEL.images.length != 0)
-                        {
+                        if (tdEL.images.length != 0) {
                             xw.startElement('icon');
 
                             xw.writeAttribute('src', tdEL.images[0].url);
@@ -996,8 +951,7 @@ async function parseGuideData(lineUp){
                             xw.endElement(); // icon
                         }
 
-                        if(tdEL.description != null)
-                        {
+                        if (tdEL.description != null) {
                             xw.startElement('desc');
 
                             xw.writeAttribute('lang', 'en');
@@ -1007,10 +961,9 @@ async function parseGuideData(lineUp){
                             xw.endElement(); // desc
                         }
 
-                        if( tdEL.kind == "episode" &&
+                        if (tdEL.kind == "episode" &&
                             tdEL.episode.rating != null
-                        )
-                        {
+                        ) {
                             xw.startElement('rating');
 
                             xw.writeAttribute('system', 'MPAA');
@@ -1019,16 +972,15 @@ async function parseGuideData(lineUp){
 
                             xw.endElement();
                         }
-                        else if( tdEL.kind == "movieAiring" &&
-                                tdEL.movieAiring.filmRating != null
-                        )
-                        {
+                        else if (tdEL.kind == "movieAiring" &&
+                            tdEL.movieAiring.filmRating != null
+                        ) {
                             xw.startElement('rating');
 
                             xw.writeAttribute('system', 'MPAA');
 
                             xw.writeElement('value', tdEL.movieAiring.filmRating);
-                            
+
                             xw.endElement();// rating
                         }
 
@@ -1036,8 +988,7 @@ async function parseGuideData(lineUp){
 
                         FS.loadingBar(totalForChannel, ++curCount);
                     }
-                    else
-                    {
+                    else {
                         FS.loadingBar(totalForChannel, ++curCount);
                     }
                 }
@@ -1045,11 +996,9 @@ async function parseGuideData(lineUp){
             process.stdout.write('\n');
         }
 
-        if(INCLUDE_PSEUDOTV_GUIDE)
-        {
-            if(FS.fileExists(path.join(DIR_NAME,"/.pseudotv/xmltv.xml")))
-            {
-                const personal = FS.readFile(path.join(DIR_NAME,"/.pseudotv/xmltv.xml"));
+        if (INCLUDE_PSEUDOTV_GUIDE) {
+            if (FS.fileExists(path.join(DIR_NAME, "/.pseudotv/xmltv.xml"))) {
+                const personal = FS.readFile(path.join(DIR_NAME, "/.pseudotv/xmltv.xml"));
 
                 const lines = personal.toString().split('\n');
 
@@ -1076,14 +1025,13 @@ async function parseGuideData(lineUp){
     }
 }
 
-async function cacheGuideData(){
+async function cacheGuideData() {
     const tempFolder = path.join(DIR_NAME, "tempGuide");
 
-    if(!FS.directoryExists(tempFolder))
-    {
+    if (!FS.directoryExists(tempFolder)) {
         FS.createDirectory(tempFolder);
     }
-    
+
     const guideDays = JSDate.getDaysFromToday(GUIDE_DAYS);
 
     const host = `lighthousetv.ewscloud.com`;
@@ -1103,12 +1051,10 @@ async function cacheGuideData(){
 
     Logger.info(`Prepping ${totalFiles} needed guide files.`);
 
-    for (let i = 0; i < lineup.length; i++)
-    {
+    for (let i = 0; i < lineup.length; i++) {
         const el = lineup[i];
 
-        for(let z = 0; z < guideDays.length; z++)
-        {
+        for (let z = 0; z < guideDays.length; z++) {
             const guideDay = guideDays[z];
 
             const fileName = el.identifier + "_" + guideDay + ".json";
@@ -1117,8 +1063,7 @@ async function cacheGuideData(){
 
             const file = path.join(tempFolder, fileName);
 
-            if(!FS.fileExists(file))
-            {
+            if (!FS.fileExists(file)) {
 
                 try {
                     const reqPathTD = path1 + el.identifier + "/airings/" + guideDay + "/";
@@ -1132,14 +1077,12 @@ async function cacheGuideData(){
 
                     const dataIn1 = await makeHTTPSRequest("GET", host, reqPathTD, headers);
 
-                    if(dataIn1)
-                    {
+                    if (dataIn1) {
                         FS.loadingBar(totalFiles, ++currentFile);
 
                         FS.writeJSON(dataIn1, file);
                     }
-                    else
-                    {
+                    else {
                         currentFile++;
 
                         Logger.error(`Could not write ${fileName}`, dataIn1);
@@ -1150,8 +1093,7 @@ async function cacheGuideData(){
                     Logger.error(error);
                 }
             }
-            else
-            {
+            else {
                 FS.loadingBar(totalFiles, ++currentFile);
             }
         }
@@ -1167,7 +1109,7 @@ async function cacheGuideData(){
     return;
 }
 
-async function parseLineup(){
+async function parseLineup() {
     try {
         /**
          * @type {channelLineup[]}
@@ -1179,8 +1121,7 @@ async function parseLineup(){
         for (let i = 0; i < lineupParse.length; i++) {
             const el = lineupParse[i];
 
-            if(el.kind == "ota")
-            {
+            if (el.kind == "ota") {
                 LINEUP_DATA[el.identifier] = {
                     GuideNumber: `${el.ota.major}.${el.ota.minor}`,
                     GuideName: el.ota.callSign,
@@ -1189,8 +1130,7 @@ async function parseLineup(){
                     srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
                 }
             }
-            else if (el.kind == "ott")
-            {
+            else if (el.kind == "ott") {
                 LINEUP_DATA[el.identifier] = {
                     GuideNumber: `${el.ott.major}.${el.ott.minor}`,
                     GuideName: el.ott.callSign,
@@ -1209,7 +1149,7 @@ async function parseLineup(){
     }
 }
 
-async function makeLineup(){
+async function makeLineup() {
     await readCreds();
 
     var host = `lighthousetv.ewscloud.com`;
@@ -1241,7 +1181,7 @@ async function makeLineup(){
         FS.writeJSON(JSON.stringify(lineupParse, null, 4), LINEUP_FILE);
 
         await parseLineup();
-        
+
         Logger.info("Successfully created new channel lineup file!");
     } catch (error) {
         Logger.error("Issue with creating new lineup file.", error);
@@ -1250,12 +1190,10 @@ async function makeLineup(){
 
 // Starts server
 (async function () {
-    if (ARGV.lineup) 
-    {
+    if (ARGV.lineup) {
         // rerun line pull
         // creates new Scheduler file
-        if(!FS.fileExists(CREDS_FILE))
-        {
+        if (!FS.fileExists(CREDS_FILE)) {
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
 
@@ -1267,21 +1205,18 @@ async function makeLineup(){
 
             await SCHEDULE.runTask();
 
-            if(CREATE_XML)
-            {
+            if (CREATE_XML) {
                 GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
 
                 await GUIDE.runTask();
             }
         }
-        else
-        {
+        else {
             SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
             await SCHEDULE.runTask();
 
-            if(CREATE_XML)
-            {
+            if (CREATE_XML) {
                 GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
 
                 await GUIDE.runTask();
@@ -1289,8 +1224,7 @@ async function makeLineup(){
         }
         await exit();
     }
-    else if (ARGV.creds) 
-    {
+    else if (ARGV.creds) {
         // creds need setting up
         Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
@@ -1300,10 +1234,8 @@ async function makeLineup(){
 
         await exit();
     }
-    else
-    {
-        if(!FS.fileExists(CREDS_FILE))
-        {
+    else {
+        if (!FS.fileExists(CREDS_FILE)) {
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
 
@@ -1315,8 +1247,7 @@ async function makeLineup(){
 
             await SCHEDULE.scheduleNextRun();
         }
-        else if(!FS.fileExists(LINEUP_FILE))
-        {
+        else if (!FS.fileExists(LINEUP_FILE)) {
             Logger.info(`No current channel lineup!`);
 
             SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
@@ -1336,10 +1267,9 @@ async function makeLineup(){
             Logger.error("Could not read lineup file. Check permissions and rerun app with --lineup.");
 
             return await exit();
-        } 
-        
-        if(CREATE_XML)
-        {
+        }
+
+        if (CREATE_XML) {
             GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
 
             await GUIDE.scheduleNextRun();
@@ -1356,13 +1286,11 @@ async function makeLineup(){
 
         process.stdin.on('data', async (key) => {
             if (key[0] == 0x78) // x key
-            { 
-                if(SCHEDULE)
-                {
+            {
+                if (SCHEDULE) {
                     SCHEDULE.cancel();
                 }
-                if(GUIDE)
-                {
+                if (GUIDE) {
                     GUIDE.cancel();
                 }
                 console.log(`${C_HEX.blue}Exiting Process...${C_HEX.reset}`);
@@ -1372,17 +1300,15 @@ async function makeLineup(){
             }
             else if (key[0] == 0x6C) // l key
             {
-                if(SCHEDULE)
-                {
+                if (SCHEDULE) {
                     await SCHEDULE.runTask();
                 }
-                if(GUIDE)
-                {
+                if (GUIDE) {
                     await GUIDE.runTask();
                 }
             }
         });
-        
+
         // Core function here
         _run_server();
     }
