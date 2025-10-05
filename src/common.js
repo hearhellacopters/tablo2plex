@@ -66,18 +66,22 @@ PROGRAM
     .description(`${C_HEX.blue}Tablo2Plex server${C_HEX.reset}`)
     .version(pack.version)
     .addHelpText(`beforeAll`, "Use the .env file to set options")
-    .option('-c, --creds', 'Enter username and password to make a new creds file.')
+    .option('-c, --creds', 'Force creation of new creds file.')
+    .option('-l, --lineup', 'Force creation of a fresh channel lineup file.')
 
-    .option('-l, --lineup', 'Creates a fresh channel lineup file.')
-
-    .option('-p, --port', 'Overide the port. (ignores .env file)')
-
+    .option('-n, --name', 'Name of the device that shows up in Plex. (overides .env file)')
+    .option('-x, --id', 'Fake ID of the device for when you have more than one device on the network. (overides .env file)')
+    .option('-p, --port', 'Overide the port. (overides .env file)')
+    .option('-i, --interval', 'How often the app rechecks the server for the channel lineup in days. (overides .env file)')
+    .option('-x, --xml', 'If you want to create an xml guide for the channels from Tablo\'s data instead of Plex. (overides .env file)')
+    .option('-d, --days', 'The amount of days the guide will populate (overides .env file)')
+    .option('-s, --pseudo', 'Include the guide data with your guide as long as it\'s at \/.pseudotv\/xmltv.xml (overides .env file)')
+    .option('-g, --level', 'Logger level. (overides .env file)')
+    .option('-k, --log', 'If you want to create a log file of all console output. (overides .env file)')
+    .option('-o, --outdir', 'Overide the output directory. Default is excution directory (overides .env file)')
     .option('-u, --user', 'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
-
-    .option('-w, --pass', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)')
+    .option('-w, --pass', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)');
     
-    .option('-o, --outdir', 'Overide the output directory. (default is excution directory)');
-
 PROGRAM.parse(process.argv);
 
 /**
@@ -93,6 +97,8 @@ const ARGV = PROGRAM.opts();
 function _get_dir_name() {
     if(ARGV.outdir){
         return ARGV.outdir;
+    } else if(process.env.OUT_DIR){
+        return ARGV.OUT_DIR;
     // @ts-ignore
     } else if (process.pkg) {
         return path.dirname(process.execPath);
@@ -109,19 +115,51 @@ function _get_dir_name() {
 const DIR_NAME = _get_dir_name();
 
 /**
+ * confrims username to use, will prompt otherwise
+ * 
+ * @returns {string|undefined} port
+ */
+function _confrim_username() {
+    if(ARGV.user){
+        return ARGV.user;
+    //check env
+    } else if (process.env.USER_NAME) {
+        return process.env.USER_NAME;
+    } else {
+        return undefined;
+    }
+};
+
+/**
  * User name for auto creds.bin creation.
  */
-const USER_NAME = ARGV.user;
+const USER_NAME = _confrim_username();
+
+/**
+ * confrims password to use, will prompt otherwise
+ * 
+ * @returns {string|undefined} port
+ */
+function _confrim_password() {
+    if(ARGV.pass){
+        return ARGV.pass;
+    //check env
+    } else if (process.env.USER_PASS) {
+        return process.env.USER_PASS;
+    } else {
+        return undefined;
+    }
+};
 
 /**
  * User password for auto creds.bin creation.
  */
-const USER_PASS = ARGV.pass;
+const USER_PASS = _confrim_password();
 
 /**
  * For auto selection a profile.
  */
-const AUTO_PROFILE = ARGV.user != undefined ? true : false;
+const AUTO_PROFILE = USER_NAME != undefined ? true : false;
 
 /**
  * For confriming log level for Logger.
@@ -129,12 +167,18 @@ const AUTO_PROFILE = ARGV.user != undefined ? true : false;
  * @returns {string} string
  */
 function _confrim_log_level() {
-    switch (process.env.LOG_LEVEL) {
+    var level;
+    if(ARGV.level){
+        level = ARGV.level;
+    } else {
+        level = process.env.LOG_LEVEL;
+    }
+    switch (level) {
         case "info":
         case "warn":
         case "error":
         case "debug":
-            return process.env.LOG_LEVEL;
+            return level;
         default:
             return "error";
     }
@@ -191,15 +235,68 @@ function _confrim_boolean(value) {
     }
 }
 
-const SAVE_LOG = process.env.SAVE_LOG == undefined ? false : _confrim_boolean(process.env.SAVE_LOG);
-
-const CREATE_XML = process.env.CREATE_XML == undefined ? false : _confrim_boolean(process.env.CREATE_XML);
-
-const INCLUDE_PSEUDOTV_GUIDE = process.env.INCLUDE_PSEUDOTV_GUIDE == undefined ? false : _confrim_boolean(process.env.INCLUDE_PSEUDOTV_GUIDE);
-
-function _confrim_guide_days() {
+/**
+ * confrim to save logs
+ */
+function _confrim_save_log(){
+    if(ARGV.log){
+        return _confrim_boolean(ARGV.log);
     //check env
-    if (process.env.GUIDE_DAYS == "" || process.env.GUIDE_DAYS == undefined) {
+    } else if (process.env.SAVE_LOG) {
+        return _confrim_boolean(process.env.SAVE_LOG);
+    } else {
+        return false;
+    }
+}
+
+const SAVE_LOG = _confrim_save_log();
+
+/**
+ * confrim xml file output
+ */
+function _confrim_xml(){
+    if(ARGV.xml){
+        return _confrim_boolean(ARGV.xml);
+    //check env
+    } else if (process.env.CREATE_XML) {
+        return _confrim_boolean(process.env.CREATE_XML);
+    } else {
+        return false;
+    }
+}
+
+const CREATE_XML = _confrim_xml();
+
+/**
+ * confrim xml file output
+ */
+function _confrim_pseudo(){
+    if(ARGV.pseudo){
+        return _confrim_boolean(ARGV.pseudo);
+    //check env
+    } else if (process.env.INCLUDE_PSEUDOTV_GUIDE) {
+        return _confrim_boolean(process.env.INCLUDE_PSEUDOTV_GUIDE);
+    } else {
+        return false;
+    }
+}
+
+const INCLUDE_PSEUDOTV_GUIDE = _confrim_pseudo();
+
+/**
+ * Day to pull in advance for line up
+ */
+function _confrim_guide_days() {
+    if(ARGV.days){
+        var num = Number(ARGV.days);
+        if (num > 0 && num < 8) {
+            return num;
+        }
+        else {
+            return 2;
+        }
+    //check env
+    } else if (process.env.GUIDE_DAYS == "" || process.env.GUIDE_DAYS == undefined) {
         return 2;
     } else {
         var num = Number(process.env.GUIDE_DAYS);
@@ -258,11 +355,39 @@ function _find_log_level() {
 const _LOG_LEVEL = _find_log_level();
 
 /**
+ * confrims name of device
+ */
+function _confrim_name(){
+    if(ARGV.name){
+        return ARGV.name;
+    //check env
+    } else if (process.env.NAME) {
+        return process.env.NAME;
+    } else {
+        return "Tablo 4th Gen Proxy";
+    }
+}
+
+/**
  * Name of the device
  */
-const NAME = process.env.NAME ? process.env.NAME : "Tablo 4th Gen Proxy";
+const NAME = _confrim_name();
 
-const DEVICE_ID = process.env.DEVICE_ID ? process.env.DEVICE_ID : "12345678";
+/**
+ * confrims name of device
+ */
+function _confrim_id(){
+    if(ARGV.id){
+        return ARGV.id;
+    //check env
+    } else if (process.env.DEVICE_ID) {
+        return process.env.DEVICE_ID;
+    } else {
+        return "12345678";
+    }
+}
+
+const DEVICE_ID = _confrim_id();
 
 /**
  * Master function for finding machine IP address.
@@ -288,11 +413,29 @@ function _get_local_IPv4_address() {
 };
 
 /**
+ * confrims update interval
+ */
+function _confrim_interval(){
+    if(ARGV.interval){
+        if(Number.isNaN(Number(ARGV.interval))){
+            return 30 * (24 * 60 * 60 * 1000);
+        }
+        return Number(ARGV.interval) * (24 * 60 * 60 * 1000)
+    //check env
+    } else if (process.env.LINEUP_UPDATE_INTERVAL) {
+        if(Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL))){
+            return 30 * (24 * 60 * 60 * 1000);
+        }
+        return Number(process.env.LINEUP_UPDATE_INTERVAL) * (24 * 60 * 60 * 1000)
+    } else {
+        return 30 * (24 * 60 * 60 * 1000);
+    }
+}
+
+/**
  * Time in days for each lineup update
  */
-const LINEUP_UPDATE_INTERVAL = process.env.LINEUP_UPDATE_INTERVAL ?
-    Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL)) ? 30 * (24 * 60 * 60 * 1000) : Number(process.env.LINEUP_UPDATE_INTERVAL) * (24 * 60 * 60 * 1000)
-    : 30 * (24 * 60 * 60 * 1000);
+const LINEUP_UPDATE_INTERVAL = _confrim_interval();
 
 /**
  * Static Class for creating and conveting Dates in JavaScript format and others.

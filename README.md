@@ -58,17 +58,20 @@ npm run build:mac:x64
 
 Use the ``.env`` file to change options for you would like to use the Tablo device and proxy.
 
-|Variable |Desc     |
-| :---    | :---  |
-|``NAME``| Name of the device that shows up in Plex|
-|``DEVICE_ID``| Fake ID of the device for when you have more than one device on the network|
-|``PORT`` | Change the port the app runs on (default ``8181``)|
+|Variable                  |Desc     |
+| :---                     | :---  |
+|``NAME``                  | Name of the device that shows up in Plex |
+|``DEVICE_ID``             | Fake ID of the device for when you have more than one device on the network |
+|``PORT``                  | Change the port the app runs on (default ``8181``)|
 |``LINEUP_UPDATE_INTERVAL``| How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.|
-|``CREATE_XML``| Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
-|``GUIDE_DAYS``| The amount of days the guide will populate. The more days, the longer it will take to populate on update. Default ``2``, max ``7`` |
+|``CREATE_XML``            | Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
+|``GUIDE_DAYS``            | The amount of days the guide will populate. The more days, the longer it will take to populate on update. Default ``2``, max ``7`` |
 |``INCLUDE_PSEUDOTV_GUIDE``| Due to issues with Plex not loading more than one EPG, you can include the guide data with your guide as long as it's at /.pseudotv/xmltv.xml. Default ``false``|
-|``LOG_LEVEL``| The amount of data you would like to see in the console. Default ``error`` and lower|
-|``SAVE_LOG``| Create a file of all console output to the /logs folder. Default ``false``|
+|``LOG_LEVEL``             | The amount of data you would like to see in the console. Default ``error`` and lower|
+|``SAVE_LOG``              | Create a file of all console output to the /logs folder. Default ``false``|
+|``OUT_DIR``               | Overide the output directory. Default is excution directory. (Disabled by default) |
+|``USER_NAME``             | Username to use for when creds.bin isn't present. (Disabled by default) |
+|``USER_PASS``             | Password to use for when creds.bin isn't present. (Disabled by default)
 
 ## Running the Proxy
 
@@ -85,16 +88,25 @@ When you first run the proxy, you will be asked to log into your Tablo account b
 
 It will ask you to select a profile or device if there is more than one on your account. Once done, it will download the channel lineup and start the proxy.
 
-Besides the ``.env`` settings, you can run the proxy with a command line to force some actions: 
+Besides the ``.env`` settings, you can run the proxy with a command line to force or overide some actions: 
 
-|Commandline    |Desc     |
-| :---          | :---    |
-|``-c,--creds`` | Force the app to ask for a login again to create new credentials files (checks every time the app runs) |
-|``-l,--lineup``| Force the app to pull a new channel line up from the Tablo servers, good if you changed a setting in the ``.env`` file (can be done at anytime while running) |
-|``-p,--port``  | Overide the port (ignores .env file) |
-|``-u,--user``  | Username to use for when creds.bin isn't present. (Note: will auto select profile) |
-|``-w,--pass``  | Password to use for when creds.bin isn't present. (Note: will auto select profile) |
-|``-o,--outdir``| Overide the output directory. (default is excution directory) |
+| Commandline      | Desc    |
+| :---             | :---    |
+|``-c,--creds``    | Force the app to ask for a login again to create new credentials files (checks every time the app runs) |
+|``-l,--lineup``   | Force the app to pull a new channel line up from the Tablo servers, good if you changed a setting in the ``.env`` file (can be done at anytime while running) |
+|``-n,--name``     | Name of the device that shows up in Plex. (overides .env file) |
+|``-x,--id``       | Fake ID of the device for when you have more than one device on the network. (overides .env file) |
+|``-p,--port``     | Overide the port (ignores .env file) |
+|``-i,--interval`` | How often the app rechecks the server for the channel lineup in days. (overides .env file) |
+|``-x,--xml``      | If you want to create an xml guide for the channels from Tablo\'s data instead of Plex. (overides .env file) |
+|``-d,--days``     | The amount of days the guide will populate (overides .env file) |
+|``-s,--pseudo``   | Include the guide data with your guide as long as it's at /.pseudotv/xmltv.xml (overides .env file) |
+|``-g,--level``    | Logger level. (overides .env file) |
+|``-k,--log``      | If you want to create a log file of all console output. (overides .env file) |
+|``-o,--outdir``   | Overide the output directory. (default is excution directory) |
+|``-u,--user``     | Username to use for when creds.bin isn't present. (Note: will auto select profile) |
+|``-w,--pass``     | Password to use for when creds.bin isn't present. (Note: will auto select profile) |
+
 
 ### Plex Setup
 
