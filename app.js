@@ -26,6 +26,9 @@ const {
     SERVER_URL,
     NAME,
     DEVICE_ID,
+    USER_NAME,
+    USER_PASS,
+    AUTO_PROFILE,
 
     makeHTTPSRequest,
     reqTabloDevice,
@@ -497,9 +500,9 @@ async function reqCreds() {
     var path;
 
     do {
-        const user = await input("What is your email?");
+        const user = USER_NAME != undefined ? USER_NAME : await input("What is your email?");
 
-        const pass = await input("What is your password?", true);
+        const pass = USER_PASS != undefined ? USER_PASS : await input("What is your password?", true);
 
         const credsData = {
             password: pass,
@@ -601,13 +604,21 @@ async function reqCreds() {
                         );
                     }
 
-                    const answer = await choose("Select which profile to use.", list);
+                    if(AUTO_PROFILE){
+                        const profile = deviceData.profiles[0];
 
-                    const profile = deviceData.profiles.find((/**@type {{name:string}}*/el) => el.name == answer);
+                        masterCreds.profile = profile;
 
-                    masterCreds.profile = profile;
+                        Logger.info(`Using profile ${profile.name}`);
+                    } else {
+                        const answer = await choose("Select which profile to use.", list);
 
-                    Logger.info(`Using profile ${profile.name}`);
+                        const profile = deviceData.profiles.find((/**@type {{name:string}}*/el) => el.name == answer);
+
+                        masterCreds.profile = profile;
+
+                        Logger.info(`Using profile ${profile.name}`);
+                    }
                 }
 
                 // lets get the device
@@ -1280,7 +1291,9 @@ async function makeLineup() {
 
         console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}l${C_HEX.yellow}' at anytime to request a new channel lineup / guide.${C_HEX.reset}`);
 
-        process.stdin.setRawMode(true);
+        if (process.stdin.isTTY) {
+            process.stdin.setRawMode(true);
+        }
 
         process.stdin.resume();
 

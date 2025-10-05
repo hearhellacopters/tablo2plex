@@ -87,10 +87,14 @@ It will ask you to select a profile or device if there is more than one on your 
 
 Besides the ``.env`` settings, you can run the proxy with a command line to force some actions: 
 
-|Commandline  |Desc     |
-| :---    | :---  |
-|``-c,--creds`` | Force the app to ask for a login again to create new credentials files (checks every time the app runs)|
-|``-l,--lineup``| Force the app to pull a new channel line up from the Tablo servers, good if you changed a setting in the ``.env`` file (can be done at anytime while running)|
+|Commandline    |Desc     |
+| :---          | :---    |
+|``-c,--creds`` | Force the app to ask for a login again to create new credentials files (checks every time the app runs) |
+|``-l,--lineup``| Force the app to pull a new channel line up from the Tablo servers, good if you changed a setting in the ``.env`` file (can be done at anytime while running) |
+|``-p,--port``  | Overide the port (ignores .env file) |
+|``-u,--user``  | Username to use for when creds.bin isn't present. (Note: will auto select profile) |
+|``-w,--pass``  | Password to use for when creds.bin isn't present. (Note: will auto select profile) |
+|``-o,--outdir``| Overide the output directory. (default is excution directory) |
 
 ### Plex Setup
 

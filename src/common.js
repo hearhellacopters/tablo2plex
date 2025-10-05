@@ -26,28 +26,6 @@ const {
     createCipheriv,
     createDecipheriv
 } = require("crypto");
-const XMLWriter = require('xml-writer');
-
-/**
- * Base path where server is running.
- * 
- * @returns {string} directory name
- */
-function _get_dir_name() {
-    // @ts-ignore
-    if (process.pkg) {
-        return path.dirname(process.execPath);
-    } else {
-        return process.cwd();
-    }
-};
-
-/**
- * Base path where server is running.
- * 
- * Used in finding files to load.
- */
-const DIR_NAME = _get_dir_name();
 
 /**
  * How the app parses arguments passed to it at the command line level.
@@ -92,12 +70,58 @@ PROGRAM
 
     .option('-l, --lineup', 'Creates a fresh channel lineup file.')
 
+    .option('-p, --port', 'Overide the port. (ignores .env file)')
+
+    .option('-u, --user', 'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
+
+    .option('-w, --pass', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)')
+    
+    .option('-o, --outdir', 'Overide the output directory. (default is excution directory)');
+
 PROGRAM.parse(process.argv);
 
 /**
  * Command line arguments.
  */
 const ARGV = PROGRAM.opts();
+
+/**
+ * Path where server outputs files.
+ * 
+ * @returns {string} directory name
+ */
+function _get_dir_name() {
+    if(ARGV.outdir){
+        return ARGV.outdir;
+    // @ts-ignore
+    } else if (process.pkg) {
+        return path.dirname(process.execPath);
+    } else {
+        return process.cwd();
+    }
+};
+
+/**
+ * Path where server outputs files.
+ * 
+ * Used in finding files to load.
+ */
+const DIR_NAME = _get_dir_name();
+
+/**
+ * User name for auto creds.bin creation.
+ */
+const USER_NAME = ARGV.user;
+
+/**
+ * User password for auto creds.bin creation.
+ */
+const USER_PASS = ARGV.pass;
+
+/**
+ * For auto selection a profile.
+ */
+const AUTO_PROFILE = ARGV.user != undefined ? true : false;
 
 /**
  * For confriming log level for Logger.
@@ -132,8 +156,10 @@ const IP_ADDRESS = _get_local_IPv4_address();
  * @returns {string} port
  */
 function _confrim_port() {
+    if(ARGV.port){
+        return ARGV.port;
     //check env
-    if (process.env.PORT == "" || process.env.PORT == undefined) {
+    } else if (process.env.PORT == "" || process.env.PORT == undefined) {
         return "8181";
     } else {
         return process.env.PORT;
@@ -1661,8 +1687,6 @@ class FS {
                 fs.unlink(filePath, (err) => {
                     if (err) {
                         Logger.error(`Error deleting file ${filePath}: ${err}`);
-                    } else {
-                        Logger.info(`Deleted file: ${filePath}`);
                     }
                 });
             });
@@ -2460,6 +2484,9 @@ module.exports = {
     SERVER_URL,
     NAME,
     DEVICE_ID,
+    USER_NAME,
+    USER_PASS,
+    AUTO_PROFILE,
 
     makeHTTPSRequest,
     reqTabloDevice,
