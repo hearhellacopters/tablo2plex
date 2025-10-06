@@ -69,18 +69,18 @@ PROGRAM
     .option('-c, --creds', 'Force creation of new creds file.')
     .option('-l, --lineup', 'Force creation of a fresh channel lineup file.')
 
-    .option('-n, --name', 'Name of the device that shows up in Plex. (overides .env file)')
-    .option('-x, --id', 'Fake ID of the device for when you have more than one device on the network. (overides .env file)')
-    .option('-p, --port', 'Overide the port. (overides .env file)')
-    .option('-i, --interval', 'How often the app rechecks the server for the channel lineup in days. (overides .env file)')
+    .option('-n, --name <string>', 'Name of the device that shows up in Plex. (overides .env file)')
+    .option('-f, --id <string>', 'Fake ID of the device for when you have more than one device on the network. (overides .env file)')
+    .option('-p, --port <string>', 'Overide the port. (overides .env file)')
+    .option('-i, --interval <string>', 'How often the app rechecks the server for the channel lineup in days. (overides .env file)')
     .option('-x, --xml', 'If you want to create an xml guide for the channels from Tablo\'s data instead of Plex. (overides .env file)')
-    .option('-d, --days', 'The amount of days the guide will populate (overides .env file)')
+    .option('-d, --days <number>', 'The amount of days the guide will populate (overides .env file)')
     .option('-s, --pseudo', 'Include the guide data with your guide as long as it\'s at \/.pseudotv\/xmltv.xml (overides .env file)')
-    .option('-g, --level', 'Logger level. (overides .env file)')
+    .option('-g, --level <string>', 'Logger level. (overides .env file)')
     .option('-k, --log', 'If you want to create a log file of all console output. (overides .env file)')
-    .option('-o, --outdir', 'Overide the output directory. Default is excution directory (overides .env file)')
-    .option('-u, --user', 'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
-    .option('-w, --pass', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)');
+    .option('-o, --outdir <string>', 'Overide the output directory. Default is excution directory (overides .env file)')
+    .option('-u, --user <string>', 'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
+    .option('-w, --pass <string>', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)');
     
 PROGRAM.parse(process.argv);
 
@@ -221,7 +221,10 @@ const PORT = _confrim_port();
  * @param {string|undefined} value 
  */
 function _confrim_boolean(value) {
-    if (value == undefined) {
+    if (typeof value == "boolean"){
+        return value;
+    } 
+    else if (value == undefined) {
         return false;
     }
     else if (typeof value != "string") {
@@ -2326,9 +2329,6 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "") {
 
         // Create the request
         const req = https.request(options, (res) => {
-
-            //console.log('statusCode:', res.statusCode);
-            //console.log('headers:', res.headers);
 
             let dataIn = '';
 

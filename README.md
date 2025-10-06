@@ -95,7 +95,7 @@ Besides the ``.env`` settings, you can run the proxy with a command line to forc
 |``-c,--creds``    | Force the app to ask for a login again to create new credentials files (checks every time the app runs) |
 |``-l,--lineup``   | Force the app to pull a new channel line up from the Tablo servers, good if you changed a setting in the ``.env`` file (can be done at anytime while running) |
 |``-n,--name``     | Name of the device that shows up in Plex. (overides .env file) |
-|``-x,--id``       | Fake ID of the device for when you have more than one device on the network. (overides .env file) |
+|``-f,--id``       | Fake ID of the device for when you have more than one device on the network. (overides .env file) |
 |``-p,--port``     | Overide the port (ignores .env file) |
 |``-i,--interval`` | How often the app rechecks the server for the channel lineup in days. (overides .env file) |
 |``-x,--xml``      | If you want to create an xml guide for the channels from Tablo\'s data instead of Plex. (overides .env file) |
