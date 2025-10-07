@@ -2,3 +2,4 @@ build.*.js
 .git
 .gitignore
 node_modules
+imgs
