@@ -72,7 +72,7 @@ PROGRAM
     .option('-n, --name <string>', 'Name of the device that shows up in Plex. (overides .env file)')
     .option('-f, --id <string>', 'Fake ID of the device for when you have more than one device on the network. (overides .env file)')
     .option('-p, --port <string>', 'Overide the port. (overides .env file)')
-    .option('-i, --interval <string>', 'How often the app rechecks the server for the channel lineup in days. (overides .env file)')
+    .option('-i, --interval <number>', 'How often the app rechecks the server for the channel lineup in days. (overides .env file)')
     .option('-x, --xml', 'If you want to create an xml guide for the channels from Tablo\'s data instead of Plex. (overides .env file)')
     .option('-d, --days <number>', 'The amount of days the guide will populate (overides .env file)')
     .option('-s, --pseudo', 'Include the guide data with your guide as long as it\'s at \/.pseudotv\/xmltv.xml (overides .env file)')

@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  tablo2plex:
+    container_name: tablo2plex
+    image: tablo2plex
+    environment:
+       - USER_NAME=<tablo username>
+       - USER_PASS=<tablo password>
+    volumes:
+      - /volume1/docker/tablo2plex/output:/output
+    network_mode: synobridge
+    ports:
+      - 8182:8181/tcp
+    restart: always
