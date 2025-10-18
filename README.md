@@ -119,89 +119,61 @@ Use the ``.env`` file to set the options you would like to use with the Tablo de
 
 *Note: Support here is experimental.*
 
-First clone the repo locally, then add a Dockerfile:
-
-```
-FROM node:20
-
-WORKDIR /app
-
-COPY package.json /app
-
-# install required node modules
-RUN npm install
-
-# install ffmpeg
-RUN apt update && apt install -y --no-install-recommends \
-  ffmpeg \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-COPY . /app
-
-EXPOSE 8181
-
-# create output directory (for mounted volume)
-RUN mkdir /output
-
-# set .env variables that can be overridden
-ENV NAME="Tablo 4th Gen Proxy" \
-    DEVICE_ID="12345678" \
-    LINEUP_UPDATE_INTERVAL=30 \
-    GUIDE_DAYS=2 \
-    LOG_LEVEL="error" \
-    SAVE_LOG="true" \
-    USER_NAME="" \
-    USER_PASS=""
-
-CMD node app.js --name $NAME --id $DEVICE_ID --interval $LINEUP_UPDATE_INTERVAL --days $GUIDE_DAYS --level $LOG_LEVEL --log $SAVE_LOG --outdir /output --user $USER_NAME --pass $USER_PASS
-```
-
-Also add a .dockerignore file:
-
-```
-build.*.js
-.git
-.gitignore
-node_modules
-```
-
-Build the image:
+First, clone the repo locally to a machine where you have Docker and Node.js installed. The Dockerfile and .dockerignore files for building the image are included in the project. Inside the cloned directory, build the tablo2plex image:
 
 ```
 $ docker build -t tablo2plex .
 ```
 
-Now build and run the container. in the Syno UI, it looks something like this:
-
-<img src="./imgs/docker1.png" width="750">
-
-Or a Docker compose.yaml file:
+This process will create a Node.js-based image with the required additional modules and ffmpeg installed to support tablo2plex. Now build and run the container via the [Docker run](https://docs.docker.com/reference/cli/docker/container/run/) command-line:
 
 ```
-version: "3.8"
-services:
-  tablo2plex:
-    container_name: tablo2plex
-    image: tablo2plex
-    environment:
-       - USER_NAME=<tablo username>
-       - USER_PASS=<tablo password>
-    volumes:
-      - /volume1/docker/tablo2plex/output:/output
-    network_mode: synobridge
-    ports:
-      - 8182:8181/tcp
-    restart: always
+$ docker run -d -v ./output:/output -e USER_NAME=<your Tablo username> -e USER_PASS=<your Tablo password> tablo2plex
 ```
 
-You can map the /output volume to a local folder so you can get to the log files and the other files (like creds.bin and the schedule_lineup.json) will persist across container builds:
+If everything goes right and the container starts, you should see files in your ./output directory (or whatever directory you mounted to the /output volume for the container), including the logs subdirectory. The log should show something like this:
 
+```
+[info] No creds file found. Lets log into your Tablo account.
+[info] NOTE: Your password and email are never stored, but are transmitted in plain text.
+Please make sure you are on a trusted network before you continue.
+[info] Loggin was accepted!
+[info] Using profile Profile 1
+[info] Using device Tablo SID_<sid> @ http://192.168.1.134:8887
+[info] Getting account token.
+[info] Account token found!
+[info] Connecting to device.
+[info] Found Tablo 4G DUAL 128GB with 2 max tuners found!
+[info] Credentials successfully created!
+[info] Credentials successfully encrypted! Ready to use the server!
+[info] Requesting a new channel lineup file!
+[info] Successfully created new channel lineup file!
+[info] Update channel lineup finished running. Next run scheduled for Mon, 17 Nov 2025 18:33:25 GMT
+[info] Server is running on http://172.17.0.2:8181 with 2 tuners
+```
+
+You can override additional environment variables by adding more `-e` parameters to the Docker command-line (ex. `-e GUIDE_DAYS=7 -e LOG_LEVEL=debug`). Once the creds.bin file is created with your encypted TabloTV credentials, you no longer need to specify the USER_NAME and USER_PASS parameters (this will also prevent your credentials from showing up on the command-line in a process list: the defaults of 'user' and 'pass' will appear but the program won't actually try to use them since the creds.bin file is already present).
+
+Instead of the Docker command-line, you can also use a [Docker compose](https://docs.docker.com/reference/cli/docker/compose/) file. An [example YAML file](docker-compose-example.yaml) is included in the repo. Modify it for your particular environment and then use it to build and run the container:
+
+```
+$ docker compose -f compose.yaml up -d
+```
+
+Like with the command-line approach, once your creds.bin file is present in the mounted /output volume, you can remove the USER_NAME and USER_PASS values from the file if you wish.
+
+Running in Container Manager on a Synology NAS, it looks something like this:
+
+##### Creating the container
+<img src="./imgs/docker1.png" width="750"/>
+
+##### Mounted volume
 <img src="./imgs/docker2.png" width="750">
 
-You should have __Tablo2Plex__ running in a container! [Configure Plex](#plex-configuration) and point it to the URL/port of __Tablo2Plex__.
-
+##### Container logs
 <img src="./imgs/docker3.png" width="750">
+
+You should now have __Tablo2Plex__ running in a Docker container! [Configure Plex](#plex-configuration) and point it to the URL/port of __Tablo2Plex__.
 
 ---
 
