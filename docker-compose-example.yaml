@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  tablo2plex:
+    container_name: tablo2plex
+    image: tablo2plex
+    environment:
+       - LINEUP_UPDATE_INTERVAL=30
+       - CREATE_XML=false
+       - GUIDE_DAYS=2
+       - INCLUDE_PSEUDOTV_GUIDE=false
+       - LOG_LEVEL=error
+       # these next two are only necessary to initially create the creds.bin file
+       # and can be removed afterwards if you don't want your credentials to show
+       # up on the docker command-line
+       - USER_NAME=<tablo username>
+       - USER_PASS=<tablo password>
+    volumes:
+      - /your/path/tablo2plex/output:/output
+    ports:
+      - 8181:8181/tcp
+    restart: always
