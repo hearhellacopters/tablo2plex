@@ -58,7 +58,7 @@ node app.js # or
 npm run start
 ```
 
-Make sure you edit your `.env` file with your personal info. See the [Configuration](#configuration) section for available variables and command lines.
+Make sure you edit your `.env` file with your personal info. See the [Configuration](#proxy-configuration) section for available variables and command lines.
 
 ---
 
@@ -75,7 +75,7 @@ npm run build:mac:x64
 
 **Note: Don't build for a system you aren't currently running.** Mac needs code signing and that is only possible on a Mac machine.
 
-Make sure you edit your `.env` file with your personal info. See the [Configuration](#configuration) section for available variables and command lines.
+Make sure you edit your `.env` file with your personal info. See the [Configuration](#proxy-configuration) section for available variables and command lines.
 
 ## Proxy Setup
 

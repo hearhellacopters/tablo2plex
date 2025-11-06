@@ -729,7 +729,9 @@ async function reqCreds() {
         if (reqPars && reqPars.model && reqPars.model.tuners) {
             masterCreds.tuners = reqPars.model.tuners;
 
-            Logger.info(`Found ${reqPars.model.name} with ${masterCreds.tuners} max tuners found!`);
+            TUNER_COUNT = reqPars.model.tuners;
+
+            Logger.info(`Found ${reqPars.model.name} with ${TUNER_COUNT} max tuners found!`);
         }
     } catch (error) {
         Logger.error(`Could not reach device. Make sure it's on the same network and try again!`);
