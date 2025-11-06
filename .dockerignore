@@ -1,5 +1,10 @@
+app.ico
 build.*.js
+docker-compose-example.yaml
+Dockerfile
+.dockerignore
 .git
 .gitignore
-node_modules
 imgs
+node_modules
+README.md
