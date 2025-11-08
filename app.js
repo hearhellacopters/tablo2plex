@@ -218,6 +218,7 @@ async function _middleware(req, res, next, port) {
  * @param {string} name 
  * @param {string} serverURL 
  * @param {string} DeviceID 
+ * @param {number} tuners
  */
 async function _discover(req, res, name, serverURL, DeviceID, tuners) {
     const discover = {
@@ -231,7 +232,7 @@ async function _discover(req, res, name, serverURL, DeviceID, tuners) {
         BaseURL: serverURL,// SERVER_URL,
         LocalIP: serverURL,// SERVER_URL,
         LineupURL: `${serverURL}/lineup.json`, // `${SERVER_URL}/lineup.json`
-        TunerCount: tuners
+        TunerCount: tuners // TUNER_COUNT
     };
 
     const headers = {
