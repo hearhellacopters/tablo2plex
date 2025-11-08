@@ -219,7 +219,7 @@ async function _middleware(req, res, next, port) {
  * @param {string} serverURL 
  * @param {string} DeviceID 
  */
-async function _discover(req, res, name, serverURL, DeviceID) {
+async function _discover(req, res, name, serverURL, DeviceID, tuners) {
     const discover = {
         FriendlyName: name, // "Tablo 4th Gen Proxy",
         Manufacturer: "tablo2plex",
@@ -230,7 +230,8 @@ async function _discover(req, res, name, serverURL, DeviceID) {
         DeviceAuth: "tabloauth123",
         BaseURL: serverURL,// SERVER_URL,
         LocalIP: serverURL,// SERVER_URL,
-        LineupURL: `${serverURL}/lineup.json` // `${SERVER_URL}/lineup.json`
+        LineupURL: `${serverURL}/lineup.json`, // `${SERVER_URL}/lineup.json`
+        TunerCount: tuners
     };
 
     const headers = {
@@ -444,7 +445,7 @@ async function _run_server() {
 
         // everything gets routed here to route.
         app.get("/discover.json", async (req, res) => {
-            return await _discover(req, res, NAME, SERVER_URL, DEVICE_ID);
+            return await _discover(req, res, NAME, SERVER_URL, DEVICE_ID, TUNER_COUNT);
         })
 
         app.get("/lineup.json", async (req, res) => {
