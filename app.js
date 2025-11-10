@@ -29,6 +29,7 @@ const {
     USER_NAME,
     USER_PASS,
     AUTO_PROFILE,
+    VERSION,
 
     makeHTTPSRequest,
     reqTabloDevice,
@@ -203,8 +204,7 @@ async function _middleware(req, res, next, port) {
 
     if (req.method === 'OPTIONS') {
         res.status(204).send('');
-    }
-    else {
+    } else {
         next(); // Move to the next middleware or route handler
     }
 
@@ -336,8 +336,7 @@ async function _channel(req, res) {
 
                 return;
             }
-        }
-        else if (selectedChannel.type == "ota") {
+        } else if (selectedChannel.type == "ota") {
             // request from device
             if (CURRENT_STREAMS < TUNER_COUNT) {
                 const firstReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID);
@@ -382,8 +381,7 @@ async function _channel(req, res) {
 
                     return;
                 }
-            }
-            else {
+            } else {
                 Logger.error(`Client ${ip && ip.replace(/::ffff:/, "")} connected to ${channelId}, but max streams are running.`);
 
                 res.status(500).send('Failed to start stream');
@@ -391,8 +389,7 @@ async function _channel(req, res) {
                 return;
             }
         }
-    }
-    else {
+    } else {
         res.status(404).send('Channel not found');
 
         return;
@@ -433,8 +430,7 @@ async function _run_server() {
         Logger.error(`${C_HEX.red}[Error]${C_HEX.reset}: .env file read error.`);
 
         await exit();
-    }
-    else {
+    } else {
         const app = express();
 
         app.set('trust proxy', true);
@@ -473,7 +469,7 @@ async function _run_server() {
 
         // Start the server
         app.listen(PORT, () => {
-            Logger.info(`Server is running on ${C_HEX.blue}${SERVER_URL}${C_HEX.reset} with ${TUNER_COUNT} tuners`);
+            Logger.info(`Server v${VERSION} is running on ${C_HEX.blue}${SERVER_URL}${C_HEX.reset} with ${TUNER_COUNT} tuners`);
             if (CREATE_XML) {
                 Logger.info(`Guide data can be found at ${C_HEX.blue}${SERVER_URL}/guide.xml${C_HEX.reset}`);
 
@@ -537,12 +533,10 @@ async function reqCreds() {
 
                     loggedIn = true;
                 }
-            }
-            else {
+            } else {
                 if (loginCreds.code) {
                     Logger.error(`Loggin was not accepted: ${loginCreds.message}`);
-                }
-                else {
+                } else {
                     Logger.error(`Loggin was not successful, try again later!`);
 
                     return await exit();
@@ -575,8 +569,7 @@ async function reqCreds() {
                 Logger.error(`User identifier missing from return. Please check your account and try again.`);
 
                 return await exit();
-            }
-            else {
+            } else {
                 masterCreds.lighthousetvIdentifier = deviceData.identifier;
             }
 
@@ -586,15 +579,13 @@ async function reqCreds() {
                     Logger.error(`User profile data missing from return. Please check your account and try again.`);
 
                     return await exit();
-                }
-                else if (deviceData.profiles.length == 1) {
+                } else if (deviceData.profiles.length == 1) {
                     const profile = deviceData.profiles[0];
 
                     masterCreds.profile = profile;
 
                     Logger.info(`Using profile ${profile.name}`);
-                }
-                else {
+                } else {
                     // lets select which profile we want to use
                     const list = [];
 
@@ -606,7 +597,7 @@ async function reqCreds() {
                         );
                     }
 
-                    if(AUTO_PROFILE){
+                    if (AUTO_PROFILE) {
                         const profile = deviceData.profiles[0];
 
                         masterCreds.profile = profile;
@@ -628,8 +619,7 @@ async function reqCreds() {
                     Logger.error(`User device data missing from return. Please check your account and try again.`);
 
                     return await exit();
-                }
-                else if (deviceData.devices.length == 1) {
+                } else if (deviceData.devices.length == 1) {
                     const device = deviceData.devices[0];
 
                     masterCreds.device = device;
@@ -637,8 +627,7 @@ async function reqCreds() {
                     Logger.info(`Using device ${device.name} ${device.serverId} @ ${device.url}`);
 
                     selectedDevice = true;
-                }
-                else {
+                } else {
                     // lets select which device we want to use
                     const list = [];
 
@@ -660,12 +649,10 @@ async function reqCreds() {
 
                     selectedDevice = true;
                 }
-            }
-            else {
+            } else {
                 if (deviceData.code) {
                     Logger.error(`Account loggin was not accepted: ${deviceData.message}`);
-                }
-                else {
+                } else {
                     Logger.error(`Account loggin was not successful, try again!`);
 
                     return await exit();
@@ -703,8 +690,7 @@ async function reqCreds() {
                 masterCreds.Lighthouse = lighthouseData.token;
 
                 gotLighthouse = true;
-            }
-            else {
+            } else {
                 Logger.error(`Account token was not found, try again!`);
 
                 return await exit();
@@ -789,8 +775,7 @@ async function readCreds() {
                 return await exit();
             }
         }
-    }
-    else {
+    } else {
         return;
     }
 }
@@ -831,8 +816,7 @@ async function parseGuideData(lineUp) {
                 xw.text(el.ota.callSign);
 
                 xw.endElement(); // display-name
-            }
-            else {
+            } else {
                 channelNum = `${el.ott.major}.${el.ott.minor}`;
 
                 xw.writeAttribute('id', channelNum);
@@ -853,8 +837,7 @@ async function parseGuideData(lineUp) {
 
                 if (lightLarge) {
                     xw.writeAttribute('src', lightLarge.url);
-                }
-                else {
+                } else {
                     xw.writeAttribute('src', el.logos[0].url);
                 }
 
@@ -951,8 +934,7 @@ async function parseGuideData(lineUp) {
                             xw.text((season - 1) + ' . ' + (tdEL.episode.episodeNumber - 1) + ' . 0/1');
 
                             xw.endElement(); // episode-num
-                        }
-                        else {
+                        } else {
                             xw.text(tdEL.title.replace(/[\n\r]+/g, " "));
 
                             xw.endElement(); // title
@@ -986,8 +968,7 @@ async function parseGuideData(lineUp) {
                             xw.writeElement('value', tdEL.episode.rating);
 
                             xw.endElement();
-                        }
-                        else if (tdEL.kind == "movieAiring" &&
+                        } else if (tdEL.kind == "movieAiring" &&
                             tdEL.movieAiring.filmRating != null
                         ) {
                             xw.startElement('rating');
@@ -1002,8 +983,7 @@ async function parseGuideData(lineUp) {
                         xw.endElement(); // programme
 
                         FS.loadingBar(totalForChannel, ++curCount);
-                    }
-                    else {
+                    } else {
                         FS.loadingBar(totalForChannel, ++curCount);
                     }
                 }
@@ -1107,8 +1087,7 @@ async function cacheGuideData() {
 
                     Logger.error(error);
                 }
-            }
-            else {
+            } else {
                 FS.loadingBar(totalFiles, ++currentFile);
             }
         }
@@ -1144,8 +1123,7 @@ async function parseLineup() {
                     type: "ota",
                     srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
                 }
-            }
-            else if (el.kind == "ott") {
+            } else if (el.kind == "ott") {
                 LINEUP_DATA[el.identifier] = {
                     GuideNumber: `${el.ott.major}.${el.ott.minor}`,
                     GuideName: el.ott.callSign,
@@ -1225,8 +1203,7 @@ async function makeLineup() {
 
                 await GUIDE.runTask();
             }
-        }
-        else {
+        } else {
             SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
             await SCHEDULE.runTask();
@@ -1238,8 +1215,7 @@ async function makeLineup() {
             }
         }
         await exit();
-    }
-    else if (ARGV.creds) {
+    } else if (ARGV.creds) {
         // creds need setting up
         Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
@@ -1248,8 +1224,7 @@ async function makeLineup() {
         await SCHEDULE.runTask();
 
         await exit();
-    }
-    else {
+    } else {
         if (!FS.fileExists(CREDS_FILE)) {
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
@@ -1261,8 +1236,7 @@ async function makeLineup() {
             SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
             await SCHEDULE.scheduleNextRun();
-        }
-        else if (!FS.fileExists(LINEUP_FILE)) {
+        } else if (!FS.fileExists(LINEUP_FILE)) {
             Logger.info(`No current channel lineup!`);
 
             SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
@@ -1302,8 +1276,7 @@ async function makeLineup() {
         process.stdin.resume();
 
         process.stdin.on('data', async (key) => {
-            if (key[0] == 0x78) // x key
-            {
+            if (key[0] == 0x78){ // x key
                 if (SCHEDULE) {
                     SCHEDULE.cancel();
                 }
@@ -1314,9 +1287,7 @@ async function makeLineup() {
                 setTimeout(() => {
                     process.exit(0);
                 }, 2000);
-            }
-            else if (key[0] == 0x6C) // l key
-            {
+            } else if (key[0] == 0x6C){ // l key
                 if (SCHEDULE) {
                     await SCHEDULE.runTask();
                 }

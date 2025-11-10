@@ -28,6 +28,11 @@ const {
 } = require("crypto");
 
 /**
+ * App version
+ */
+const VERSION = pack.version;
+
+/**
  * How the app parses arguments passed to it at the command line level.
  * 
  * @class
@@ -2630,6 +2635,7 @@ module.exports = {
     USER_NAME,
     USER_PASS,
     AUTO_PROFILE,
+    VERSION,
 
     makeHTTPSRequest,
     reqTabloDevice,
