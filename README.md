@@ -94,7 +94,7 @@ Use the ``.env`` file to set the options you would like to use with the Tablo de
 | ``-none-``               | ``-c,--creds``    | `boolean` | Force the app to ask for a login again to create new credentials files (Checks every time the app runs) |
 | ``-none-``               | ``-l,--lineup``   | `boolean` | Force the app to pull a new channel line up from the Tablo servers. (Can be done at anytime while running.) |
 |``NAME``                  | ``-n,--name``     | `string`  | Name of the device that shows up in Plex. Default `"Tablo 4th Gen Proxy"` |
-|``DEVICE_ID``             | ``-f,--id``       | `string`  | Fake ID of the device for when you have more than one device on the network. Default `"12345678"` |
+|``DEVICE_ID``             | ``-f,--id``       | `string`  | Fake ID of the device for when you have more than one device on the network. Default `"12345679"` |
 |``PORT``                  | ``-p,--port``     | `string`  | Change the port the app runs on (default ``8181``)|
 |``LINEUP_UPDATE_INTERVAL``| ``-i,--interval`` | `string`  | How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.|
 |``CREATE_XML``            | ``-x,--xml``      | `boolean` | Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
