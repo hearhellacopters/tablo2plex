@@ -23,4 +23,4 @@ RUN mkdir /output
 # set .env variables that can be overridden
 ENV OUT_DIR="/output"
 
-CMD node app.js
+CMD ["node", "app.js"]
