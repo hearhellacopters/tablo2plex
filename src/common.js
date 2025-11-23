@@ -73,6 +73,7 @@ PROGRAM
     .addHelpText(`beforeAll`, "Use the .env file to set options")
     .option('-c, --creds', 'Force creation of new creds file.')
     .option('-l, --lineup', 'Force creation of a fresh channel lineup file.')
+    .option('--device <string>', 'Server ID of the Tablo device to use. (overides .env file)')
 
     .option('-n, --name <string>', 'Name of the device that shows up in Plex. (overides .env file)')
     .option('-f, --id <string>', 'Fake ID of the device for when you have more than one device on the network. (overides .env file)')
@@ -86,7 +87,7 @@ PROGRAM
     .option('-o, --outdir <string>', 'Overide the output directory. Default is excution directory (overides .env file)')
     .option('-u, --user <string>', 'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
     .option('-w, --pass <string>', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)');
-    
+
 PROGRAM.parse(process.argv);
 
 /**
@@ -100,11 +101,11 @@ const ARGV = PROGRAM.opts();
  * @returns {string} directory name
  */
 function _get_dir_name() {
-    if(ARGV.outdir){
+    if (ARGV.outdir) {
         return ARGV.outdir;
-    } else if(process.env.OUT_DIR){
-        return ARGV.OUT_DIR;
-    // @ts-ignore
+    } else if (process.env.OUT_DIR) {
+        return process.env.OUT_DIR;
+        // @ts-ignore
     } else if (process.pkg) {
         return path.dirname(process.execPath);
     } else {
@@ -125,9 +126,9 @@ const DIR_NAME = _get_dir_name();
  * @returns {string|undefined} port
  */
 function _confrim_username() {
-    if(ARGV.user){
+    if (ARGV.user) {
         return ARGV.user;
-    //check env
+        //check env
     } else if (process.env.USER_NAME) {
         return process.env.USER_NAME;
     } else {
@@ -146,9 +147,9 @@ const USER_NAME = _confrim_username();
  * @returns {string|undefined} port
  */
 function _confrim_password() {
-    if(ARGV.pass){
+    if (ARGV.pass) {
         return ARGV.pass;
-    //check env
+        //check env
     } else if (process.env.USER_PASS) {
         return process.env.USER_PASS;
     } else {
@@ -173,7 +174,7 @@ const AUTO_PROFILE = USER_NAME != undefined ? true : false;
  */
 function _confrim_log_level() {
     var level;
-    if(ARGV.level){
+    if (ARGV.level) {
         level = ARGV.level;
     } else {
         level = process.env.LOG_LEVEL;
@@ -205,9 +206,9 @@ const IP_ADDRESS = _get_local_IPv4_address();
  * @returns {string} port
  */
 function _confrim_port() {
-    if(ARGV.port){
+    if (ARGV.port) {
         return ARGV.port;
-    //check env
+        //check env
     } else if (process.env.PORT == "" || process.env.PORT == undefined) {
         return "8181";
     } else {
@@ -226,9 +227,9 @@ const PORT = _confrim_port();
  * @param {string|undefined} value 
  */
 function _confrim_boolean(value) {
-    if (typeof value == "boolean"){
+    if (typeof value == "boolean") {
         return value;
-    } 
+    }
     else if (value == undefined) {
         return false;
     }
@@ -246,10 +247,10 @@ function _confrim_boolean(value) {
 /**
  * confrim to save logs
  */
-function _confrim_save_log(){
-    if(ARGV.log){
+function _confrim_save_log() {
+    if (ARGV.log) {
         return _confrim_boolean(ARGV.log);
-    //check env
+        //check env
     } else if (process.env.SAVE_LOG) {
         return _confrim_boolean(process.env.SAVE_LOG);
     } else {
@@ -262,10 +263,10 @@ const SAVE_LOG = _confrim_save_log();
 /**
  * confrim xml file output
  */
-function _confrim_xml(){
-    if(ARGV.xml){
+function _confrim_xml() {
+    if (ARGV.xml) {
         return _confrim_boolean(ARGV.xml);
-    //check env
+        //check env
     } else if (process.env.CREATE_XML) {
         return _confrim_boolean(process.env.CREATE_XML);
     } else {
@@ -278,10 +279,10 @@ const CREATE_XML = _confrim_xml();
 /**
  * confrim xml file output
  */
-function _confrim_pseudo(){
-    if(ARGV.pseudo){
+function _confrim_pseudo() {
+    if (ARGV.pseudo) {
         return _confrim_boolean(ARGV.pseudo);
-    //check env
+        //check env
     } else if (process.env.INCLUDE_PSEUDOTV_GUIDE) {
         return _confrim_boolean(process.env.INCLUDE_PSEUDOTV_GUIDE);
     } else {
@@ -295,7 +296,7 @@ const INCLUDE_PSEUDOTV_GUIDE = _confrim_pseudo();
  * Day to pull in advance for line up
  */
 function _confrim_guide_days() {
-    if(ARGV.days){
+    if (ARGV.days) {
         var num = Number(ARGV.days);
         if (num > 0 && num < 8) {
             return num;
@@ -303,7 +304,7 @@ function _confrim_guide_days() {
         else {
             return 2;
         }
-    //check env
+        //check env
     } else if (process.env.GUIDE_DAYS == "" || process.env.GUIDE_DAYS == undefined) {
         return 2;
     } else {
@@ -365,10 +366,10 @@ const _LOG_LEVEL = _find_log_level();
 /**
  * confrims name of device
  */
-function _confrim_name(){
-    if(ARGV.name){
+function _confrim_name() {
+    if (ARGV.name) {
         return ARGV.name;
-    //check env
+        //check env
     } else if (process.env.NAME) {
         return process.env.NAME;
     } else {
@@ -384,10 +385,10 @@ const NAME = _confrim_name();
 /**
  * confrims name of device
  */
-function _confrim_id(){
-    if(ARGV.id){
+function _confrim_id() {
+    if (ARGV.id) {
         return ARGV.id;
-    //check env
+        //check env
     } else if (process.env.DEVICE_ID) {
         return process.env.DEVICE_ID;
     } else {
@@ -396,6 +397,22 @@ function _confrim_id(){
 }
 
 const DEVICE_ID = _confrim_id();
+
+/**
+ * confrims device to use
+ */
+function _confrim_device() {
+    if (ARGV.device) {
+        return ARGV.device;
+        //check env
+    } else if (process.env.TABLO_DEVICE) {
+        return process.env.TABLO_DEVICE;
+    } else {
+        return undefined;
+    }
+}
+
+const TABLO_DEVICE = _confrim_device();
 
 /**
  * Master function for finding machine IP address.
@@ -423,15 +440,15 @@ function _get_local_IPv4_address() {
 /**
  * confrims update interval
  */
-function _confrim_interval(){
-    if(ARGV.interval){
-        if(Number.isNaN(Number(ARGV.interval))){
+function _confrim_interval() {
+    if (ARGV.interval) {
+        if (Number.isNaN(Number(ARGV.interval))) {
             return 30 * (24 * 60 * 60 * 1000);
         }
         return Number(ARGV.interval) * (24 * 60 * 60 * 1000)
-    //check env
+        //check env
     } else if (process.env.LINEUP_UPDATE_INTERVAL) {
-        if(Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL))){
+        if (Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL))) {
             return 30 * (24 * 60 * 60 * 1000);
         }
         return Number(process.env.LINEUP_UPDATE_INTERVAL) * (24 * 60 * 60 * 1000)
@@ -2632,6 +2649,7 @@ module.exports = {
     SERVER_URL,
     NAME,
     DEVICE_ID,
+    TABLO_DEVICE,
     USER_NAME,
     USER_PASS,
     AUTO_PROFILE,
