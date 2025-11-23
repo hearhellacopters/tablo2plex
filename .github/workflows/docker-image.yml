@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # required for GHCR push
+      packages: write
 
     steps:
     - uses: actions/checkout@v4
@@ -26,15 +26,18 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Set image tag
+      id: vars
+      run: echo "TAG=$(date +%s)" >> $GITHUB_ENV
+
     - name: Build Docker image
       run: |
-        TIMESTAMP=$(date +%s)
         docker build . \
           --file Dockerfile \
           --tag ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest \
-          --tag ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:$TIMESTAMP
+          --tag ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${TAG}
 
     - name: Push Docker image
       run: |
         docker push ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-        docker push ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:$(date +%s)
+        docker push ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${TAG}
