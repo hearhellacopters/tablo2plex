@@ -26,6 +26,7 @@ const {
     SERVER_URL,
     NAME,
     DEVICE_ID,
+    TABLO_DEVICE,
     USER_NAME,
     USER_PASS,
     AUTO_PROFILE,
@@ -629,25 +630,43 @@ async function reqCreds() {
                     selectedDevice = true;
                 } else {
                     // lets select which device we want to use
-                    const list = [];
+                    if (TABLO_DEVICE) {
+                        const device = deviceData.devices.find((/**@type {{serverId:string}}*/el) => el.serverId == TABLO_DEVICE);
 
-                    for (let i = 0; i < deviceData.devices.length; i++) {
-                        const el = deviceData.devices[i];
+                        if (device) {
+                            masterCreds.device = device;
 
-                        list.push(
-                            { value: el.serverId }
-                        );
+                            Logger.info(`Using device ${device.name} ${device.serverId} @ ${device.url}`);
+
+                            selectedDevice = true;
+                        } else {
+                            Logger.error(`Device with serverId ${TABLO_DEVICE} not found.`);
+
+                            Logger.warn("Falling back to manual selection.");
+                        }
                     }
 
-                    const answer = await choose("Select which device to use with Plex.", list);
+                    if (!selectedDevice) {
+                        const list = [];
 
-                    const device = deviceData.devices.find((/**@type {{serverId:string}}*/el) => el.serverId == answer);
+                        for (let i = 0; i < deviceData.devices.length; i++) {
+                            const el = deviceData.devices[i];
 
-                    masterCreds.device = device;
+                            list.push(
+                                { value: el.serverId }
+                            );
+                        }
 
-                    Logger.info(`Using device ${device.name} ${device.serverId} @ ${device.url}`);
+                        const answer = await choose("Select which device to use with Plex.", list);
 
-                    selectedDevice = true;
+                        const device = deviceData.devices.find((/**@type {{serverId:string}}*/el) => el.serverId == answer);
+
+                        masterCreds.device = device;
+
+                        Logger.info(`Using device ${device.name} ${device.serverId} @ ${device.url}`);
+
+                        selectedDevice = true;
+                    }
                 }
             } else {
                 if (deviceData.code) {

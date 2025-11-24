@@ -103,6 +103,7 @@ Use the ``.env`` file to set the options you would like to use with the Tablo de
 |``LOG_LEVEL``             | ``-g,--level``    | `string`  | The amount of data you would like to see in the console. `"debug", "warn", "error" or "info"`. Default ``error`` and lower|
 |``SAVE_LOG``              | ``-k,--log``      | `boolean` | Create a file of all console output to the /logs folder. Default ``false``|
 |``OUT_DIR``               | ``-o,--outdir``   | `string`  | Overide the output directory. Default is excution directory. (Disabled in `.env` by default) |
+|``TABLO_DEVICE``          | ``-v,--device``   | `string`  | Server ID of the Tablo device to use if you have more than one on your account. (Disabled in `.env` by default)  |
 |``USER_NAME``             | ``-u,--user``     | `string`  | Username to use for when creds.bin isn't present. (Disabled in `.env` by default) |
 |``USER_PASS``             | ``-w,--pass``     | `string`  | Password to use for when creds.bin isn't present. (Disabled in `.env` by default) |
 
@@ -149,7 +150,7 @@ Please make sure you are on a trusted network before you continue.
 [info] Requesting a new channel lineup file!
 [info] Successfully created new channel lineup file!
 [info] Update channel lineup finished running. Next run scheduled for Mon, 17 Nov 2025 18:33:25 GMT
-[info] Server is running on http://172.17.0.2:8181 with 2 tuners
+[info] Server v0.9.3 is running on http://172.17.0.2:8181 with 2 tuners
 ```
 
 You can override additional environment variables by adding more `-e` parameters to the Docker command-line (ex. `-e GUIDE_DAYS=7 -e LOG_LEVEL=debug`). Once the creds.bin file is created with your encypted TabloTV credentials, you no longer need to specify the USER_NAME and USER_PASS parameters (this will also prevent your credentials from showing up on the command-line in a process list: the defaults of 'user' and 'pass' will appear but the program won't actually try to use them since the creds.bin file is already present).

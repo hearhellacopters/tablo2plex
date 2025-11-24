@@ -84,6 +84,7 @@ PROGRAM
     .option('-g, --level <boolean>', 'Logger level. (overides .env file)')
     .option('-k, --log <boolean>', 'If you want to create a log file of all console output. (overides .env file)')
     .option('-o, --outdir <string>', 'Overide the output directory. Default is excution directory (overides .env file)')
+    .option('-v, --device <string>', 'Server ID of the Tablo device to use if you have more than 1. (overides .env file)')
     .option('-u, --user <string>', 'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
     .option('-w, --pass <string>', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)');
     
@@ -446,7 +447,26 @@ function _confrim_interval(){
 const LINEUP_UPDATE_INTERVAL = _confrim_interval();
 
 /**
- * Static Class for creating and conveting Dates in JavaScript format and others.
+ * confrims device to use
+ */
+function _confrim_device() {
+    if (ARGV.device) {
+        return ARGV.device;
+        //check env
+    } else if (process.env.TABLO_DEVICE) {
+        return process.env.TABLO_DEVICE;
+    } else {
+        return undefined;
+    }
+}
+
+/**
+ * Server ID of the Tablo device to use if you have more than 1
+ */
+const TABLO_DEVICE = _confrim_device();
+
+/**
+ * Static Class for creating and converting Dates in JavaScript format and others.
  * 
  * @class 
  */
@@ -2632,6 +2652,7 @@ module.exports = {
     SERVER_URL,
     NAME,
     DEVICE_ID,
+    TABLO_DEVICE,
     USER_NAME,
     USER_PASS,
     AUTO_PROFILE,
