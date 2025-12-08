@@ -31,6 +31,7 @@ const {
     USER_PASS,
     AUTO_PROFILE,
     VERSION,
+    FFMPEG_LOG_LEVEL,
 
     makeHTTPSRequest,
     reqTabloDevice,
@@ -148,8 +149,14 @@ const LINEUP_FILE = path.join(DIR_NAME, "lineup.json");
  * @property {string} url
  */
 
+/**
+ * schedule_guide.json path location
+ */
 const SCHEDULE_GUIDE = path.join(DIR_NAME, "schedule_guide.json");
 
+/**
+ * guide.xml path locations
+ */
 const GUIDE_FILE = path.join(DIR_NAME, "guide.xml");
 
 /**
@@ -310,7 +317,7 @@ async function _channel(req, res) {
                     '-i', selectedChannel.srcURL,
                     '-c', 'copy',
                     '-f', 'mpegts',
-                    '-v', 'repeat+level+panic',
+                    '-v', `repeat+level+${FFMPEG_LOG_LEVEL}`,
                     'pipe:1'
                 ]);
 
@@ -319,7 +326,20 @@ async function _channel(req, res) {
                 ffmpeg.stdout.pipe(res);
 
                 ffmpeg.stderr.on('data', (data) => {
-                    Logger.error(`[ffmpeg] ${data}`);
+                    switch (FFMPEG_LOG_LEVEL) {
+                        case "info":
+                            Logger.info(`[ffmpeg] ${data}`);
+                            break;
+                        case "debug":
+                            Logger.debug(`[ffmpeg] ${data}`);
+                            break;
+                        case "warning":
+                            Logger.warn(`[ffmpeg] ${data}`);
+                            break;
+                        default:
+                            Logger.error(`[ffmpeg] ${data}`);
+                            break;
+                    }
                 });
 
                 req.on('close', () => {
@@ -349,7 +369,7 @@ async function _channel(req, res) {
                         '-i', firstJSON.playlist_url,
                         '-c', 'copy',
                         '-f', 'mpegts',
-                        '-v', 'repeat+level+panic',
+                        '-v', `repeat+level+${FFMPEG_LOG_LEVEL}`,
                         'pipe:1'
                     ]);
 
@@ -362,7 +382,20 @@ async function _channel(req, res) {
                     ffmpeg.stdout.pipe(res);
 
                     ffmpeg.stderr.on('data', (data) => {
-                        Logger.error(`[ffmpeg] ${data}`);
+                        switch (FFMPEG_LOG_LEVEL) {
+                        case "info":
+                            Logger.info(`[ffmpeg] ${data}`);
+                            break;
+                        case "debug":
+                            Logger.debug(`[ffmpeg] ${data}`);
+                            break;
+                        case "warning":
+                            Logger.warn(`[ffmpeg] ${data}`);
+                            break;
+                        default:
+                            Logger.error(`[ffmpeg] ${data}`);
+                            break;
+                    }
                     });
 
                     req.on('close', () => {
@@ -986,7 +1019,7 @@ async function parseGuideData(lineUp) {
 
                             xw.writeElement('value', tdEL.episode.rating);
 
-                            xw.endElement();
+                            xw.endElement();// rating
                         } else if (tdEL.kind == "movieAiring" &&
                             tdEL.movieAiring.filmRating != null
                         ) {
@@ -1008,6 +1041,12 @@ async function parseGuideData(lineUp) {
                 }
             }
             process.stdout.write('\n');
+            // clear spam
+            process.stdout.moveCursor(0, -1);
+            process.stdout.clearLine(1);
+            process.stdout.moveCursor(0, -1);
+            process.stdout.clearLine(1);
+            process.stdout.cursorTo(0);
         }
 
         if (INCLUDE_PSEUDOTV_GUIDE) {
@@ -1112,6 +1151,12 @@ async function cacheGuideData() {
         }
     }
     process.stdout.write('\n');
+    // clear spam
+    process.stdout.moveCursor(0, -1);
+    process.stdout.clearLine(1);
+    process.stdout.moveCursor(0, -1);
+    process.stdout.clearLine(1);
+    process.stdout.cursorTo(0);
 
     FS.deleteUnlistedFiles(tempFolder, neededFiles);
 
@@ -1212,27 +1257,18 @@ async function makeLineup() {
             Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
             await reqCreds();
+        } 
 
-            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+        SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
-            await SCHEDULE.runTask();
+        await SCHEDULE.runTask();
 
-            if (CREATE_XML) {
-                GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
+        if (CREATE_XML) {
+            GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
 
-                await GUIDE.runTask();
-            }
-        } else {
-            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
-
-            await SCHEDULE.runTask();
-
-            if (CREATE_XML) {
-                GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
-
-                await GUIDE.runTask();
-            }
+            await GUIDE.runTask();
         }
+
         await exit();
     } else if (ARGV.creds) {
         // creds need setting up

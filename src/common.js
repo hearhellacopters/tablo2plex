@@ -196,6 +196,37 @@ function _confrim_log_level() {
 const LOG_LEVEL = _confrim_log_level();
 
 /**
+ * For confriming ffmpeg log level.
+ * 
+ * @returns {string} string
+ */
+function _confrim_ffmpeg_log_level() {
+    var level;
+    if(ARGV.level){
+        level = ARGV.level;
+    } else {
+        level = process.env.LOG_LEVEL;
+    }
+    switch (level) {
+         case "debug":
+            return "debug";
+        case "warn":
+            return "warning";
+        case "error":
+            return "panic";
+        case "info":
+            return "info";
+        default:
+            return "panic";
+    }
+};
+
+/**
+ * Log level for ffmpeg.
+ */
+const FFMPEG_LOG_LEVEL = _confrim_ffmpeg_log_level();
+
+/**
  * IP Address of the machine.
  */
 const IP_ADDRESS = _get_local_IPv4_address();
@@ -2657,6 +2688,7 @@ module.exports = {
     USER_PASS,
     AUTO_PROFILE,
     VERSION,
+    FFMPEG_LOG_LEVEL,
 
     makeHTTPSRequest,
     reqTabloDevice,
