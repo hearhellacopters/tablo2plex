@@ -2244,7 +2244,7 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
             return Buffer.from(await response.arrayBuffer())
         }
         else {
-            Logger.error(`\x1b[31m[Error]\x1b[0m: Fetching device ${url}`);
+            Logger.error(`Fetching device ${url}`);
             return Buffer.alloc(0);
         }
     });

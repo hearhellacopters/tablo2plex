@@ -312,6 +312,18 @@ async function _channel(req, res) {
     if (selectedChannel) {
         if (selectedChannel.type == "ott") {
             // request from internet
+
+            // check if there is a srcURL
+            if(selectedChannel.srcURL == undefined){
+                Logger.error('srcURL missing from requested channel:');
+
+                Logger.error(selectedChannel);
+
+                res.status(500).send('Failed to find stream url.');
+
+                return;
+            }
+
             try {
                 const ffmpeg = spawn('ffmpeg', [
                     '-i', selectedChannel.srcURL,
@@ -360,13 +372,28 @@ async function _channel(req, res) {
         } else if (selectedChannel.type == "ota") {
             // request from device
             if (CURRENT_STREAMS < TUNER_COUNT) {
-                const firstReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID);
+                const channelReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID);
 
                 try {
-                    var firstJSON = JSON.parse(firstReq.toString());
+                    /**
+                     * @type {{token: string, expires: string, keepalive: number, playlist_url: string, video_details: {container_format: string, flags: any[]}}}
+                     */
+                    const channelJSON = JSON.parse(channelReq.toString());
+
+                    if(channelJSON.playlist_url == undefined){
+                        Logger.error('playlist_url missing from requested channel:');
+
+                        Logger.error(channelJSON);
+
+                        Logger.error(selectedChannel);
+
+                        res.status(500).send('Failed to find playlist url.');
+
+                        return;
+                    }
 
                     const ffmpeg = spawn('ffmpeg', [
-                        '-i', firstJSON.playlist_url,
+                        '-i', channelJSON.playlist_url,
                         '-c', 'copy',
                         '-f', 'mpegts',
                         '-v', `repeat+level+${FFMPEG_LOG_LEVEL}`,
@@ -1167,13 +1194,17 @@ async function cacheGuideData() {
     return;
 }
 
-async function parseLineup() {
+/**
+ * 
+ * @param {channelLineup[]|undefined} lineup 
+ * @returns 
+ */
+async function parseLineup(lineup = undefined) {
+    /**
+     * @type {channelLineup[]}
+     */
+    var lineupParse = lineup ?? FS.readJSON(LINEUP_FILE); 
     try {
-        /**
-         * @type {channelLineup[]}
-         */
-        const lineupParse = FS.readJSON(LINEUP_FILE);
-
         for (let i = 0; i < lineupParse.length; i++) {
             const el = lineupParse[i];
 
@@ -1195,6 +1226,7 @@ async function parseLineup() {
                 }
             } else {
                 Logger.error("Unknown lineup type:");
+
                 Logger.error(el);
             }
         }
@@ -1238,7 +1270,7 @@ async function makeLineup() {
 
         FS.writeJSON(JSON.stringify(lineupParse, null, 4), LINEUP_FILE);
 
-        await parseLineup();
+        await parseLineup(lineupParse);
 
         Logger.info("Successfully created new channel lineup file!");
     } catch (error) {
