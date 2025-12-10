@@ -162,7 +162,7 @@ const GUIDE_FILE = path.join(DIR_NAME, "guide.xml");
 /**
  * @type {{[key:string]:{GuideNumber:string, GuideName:string, URL:string, type:string, srcURL:string}}}
  */
-var LINEUP_DATA;
+var LINEUP_DATA = {};
 
 /**
  * Amount of streams allowed
