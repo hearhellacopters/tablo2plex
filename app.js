@@ -1174,8 +1174,6 @@ async function parseLineup() {
          */
         const lineupParse = FS.readJSON(LINEUP_FILE);
 
-        LINEUP_DATA = {};
-
         for (let i = 0; i < lineupParse.length; i++) {
             const el = lineupParse[i];
 
@@ -1195,6 +1193,9 @@ async function parseLineup() {
                     type: "ott",
                     srcURL: el.ott.streamUrl
                 }
+            } else {
+                Logger.error("Unknown lineup type:");
+                Logger.error(el);
             }
         }
 
