@@ -2232,6 +2232,12 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
         headers["Content-Length"] = `${body.length}`;
     }
     headers["Authorization"] = auth;
+    Logger.debug("Tablo Request:");
+
+    Logger.debug(headers);
+
+    Logger.debug(msg);
+    
     return await fetch(
         baseUrl.toString(),
         {
@@ -2241,9 +2247,8 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
         }
     ).then(async response => {
         if (response) {
-            return Buffer.from(await response.arrayBuffer())
-        }
-        else {
+            return Buffer.from(await response.arrayBuffer());
+        } else {
             Logger.error(`Fetching device ${url}`);
             return Buffer.alloc(0);
         }
@@ -2268,18 +2273,18 @@ async function reqTabloDevice(method, host, path, UUID) {
     if (method == "POST") {
         headers["Content-Type"] = "application/x-www-form-urlencoded";
         dataIn["bandwidth"] = null;
-        dataIn["device_id"] = UUID;
         dataIn["extra"] = {
-            "deviceId": "00000000-0000-0000-0000-000000000000",
-            "deviceOS": "iOS",
-            "deviceMake": "Apple",
-            "height": 1080,
-            "deviceOSVersion": "16.6",
-            "width": 1920,
-            "lang": "en_US",
             "limitedAdTracking": 1,
-            "deviceModel": "iPhone10,1"
+            "deviceOSVersion": "16.6",
+            "lang": "en_US",
+            "height": 1080,
+            "deviceId": "00000000-0000-0000-0000-000000000000",
+            "width": 1920,
+            "deviceModel": "iPhone10,1",
+            "deviceMake": "Apple",
+            "deviceOS": "iOS",
         };
+        dataIn["device_id"] = UUID;
         dataIn["platform"] = "ios";
     }
     return await makeTabloRequest(method, host, path, method == "POST" ? JSON.stringify(dataIn) : "", headers);
@@ -2688,6 +2693,7 @@ module.exports = {
     USER_PASS,
     AUTO_PROFILE,
     VERSION,
+    LOG_LEVEL,
     FFMPEG_LOG_LEVEL,
 
     makeHTTPSRequest,

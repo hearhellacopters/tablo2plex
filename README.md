@@ -100,7 +100,7 @@ Use the ``.env`` file to set the options you would like to use with the Tablo de
 |``CREATE_XML``            | ``-x,--xml``      | `boolean` | Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
 |``GUIDE_DAYS``            | ``-d,--days``     | `number`  | The amount of days the guide will populate. The more days, the longer it will take to populate on update. Default ``2``, max ``7`` |
 |``INCLUDE_PSEUDOTV_GUIDE``| ``-s,--pseudo``   | `boolean` | Due to issues with Plex not loading more than one EPG, you can include the guide data with your guide as long as it's at /.pseudotv/xmltv.xml. Default ``false``|
-|``LOG_LEVEL``             | ``-g,--level``    | `string`  | The amount of data you would like to see in the console. `"debug", "warn", "error" or "info"`. Default ``error`` and lower|
+|``LOG_LEVEL``             | ``-g,--level``    | `string`  | The amount of data you would like to see in the console. `"debug", "warn", "error" or "info"`. Default ``error`` and lower<br>Note: It's recommended after using `"debug"` that you clear your log files if any were generated.|
 |``SAVE_LOG``              | ``-k,--log``      | `boolean` | Create a file of all console output to the /logs folder. Default ``false``|
 |``OUT_DIR``               | ``-o,--outdir``   | `string`  | Overide the output directory. Default is excution directory. (Disabled in `.env` by default) |
 |``TABLO_DEVICE``          | ``-v,--device``   | `string`  | Server ID of the Tablo device to use if you have more than one on your account. (Disabled in `.env` by default)  |

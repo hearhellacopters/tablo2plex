@@ -31,6 +31,7 @@ const {
     USER_PASS,
     AUTO_PROFILE,
     VERSION,
+    LOG_LEVEL,
     FFMPEG_LOG_LEVEL,
 
     makeHTTPSRequest,
@@ -392,6 +393,10 @@ async function _channel(req, res) {
                         return;
                     }
 
+                    Logger.debug("Tablo Response:");
+
+                    Logger.debug(channelJSON);
+
                     const ffmpeg = spawn('ffmpeg', [
                         '-i', channelJSON.playlist_url,
                         '-c', 'copy',
@@ -538,6 +543,13 @@ async function _run_server() {
 
                 Logger.info(`or ${C_HEX.blue}${guideLoc}${C_HEX.reset}`);
             }
+            if(LOG_LEVEL == "debug"){
+                Logger.debug("Debug mode is active!");
+
+                Logger.debug(`It is recommended that you have ${C_HEX.blue}SAVE_LOG${C_HEX.reset} = ${C_HEX.green}true${C_HEX.reset} while debugging.`);
+
+                Logger.debug("When finished, please delete all logs as they will contain sensitive private info.");
+            }
         });
     }
 };
@@ -584,6 +596,10 @@ async function reqCreds() {
             loginCreds = JSON.parse(retData);
 
             if (loginCreds.code == undefined) {
+                Logger.debug("lighthousetv login");
+
+                Logger.debug(loginCreds);
+
                 if (loginCreds.is_verified != true) {
                     Logger.info(`${C_HEX.blue}NOTE:${C_HEX.reset} While password was accepted, account is not verified.\nPlease check email to make sure your account is fully set up. There may be issues later.`);
                 }
@@ -635,6 +651,10 @@ async function reqCreds() {
             }
 
             if (deviceData.code == undefined) {
+                Logger.debug("lighthousetv account");
+
+                Logger.debug(deviceData);
+
                 // lets get the profile
                 if (deviceData.profiles == undefined) {
                     Logger.error(`User profile data missing from return. Please check your account and try again.`);
@@ -799,6 +819,10 @@ async function reqCreds() {
             TUNER_COUNT = reqPars.model.tuners;
 
             Logger.info(`Found ${reqPars.model.name} with ${TUNER_COUNT} max tuners found!`);
+
+            Logger.debug("server info");
+
+            Logger.debug(reqPars);
         }
     } catch (error) {
         Logger.error(`Could not reach device. Make sure it's on the same network and try again!`);
