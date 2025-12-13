@@ -373,7 +373,7 @@ async function _channel(req, res) {
         } else if (selectedChannel.type == "ota") {
             // request from device
             if (CURRENT_STREAMS < TUNER_COUNT) {
-                const channelReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID);
+                const channelReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID, "lh");
 
                 try {
                     /**
@@ -808,7 +808,7 @@ async function reqCreds() {
 
     Logger.info(`Connecting to device.`);
 
-    const firstReq = await reqTabloDevice("GET", masterCreds.device.url, `/server/info`, masterCreds.UUID);
+    const firstReq = await reqTabloDevice("GET", masterCreds.device.url, `/server/info`, masterCreds.UUID, "lh");
 
     try {
         const reqPars = JSON.parse(firstReq.toString());

@@ -2211,15 +2211,14 @@ function makeDeviceAuth(method, url, msg, date) {
  * @param {string} path 
  * @param {string} msg 
  * @param {{"Content-Type"?:string,Connection?:string,Date?:string,Accept?:string,"User-Agent"?:string,"Content-Length"?:string,Authorization?:string}} headers 
- * @param {Record<string, string>} params 
+ * @param {string} params 
  * @returns {Promise<Buffer>}
  */
-async function makeTabloRequest(method, host, path, msg = "", headers = {}, params = {}) {
+async function makeTabloRequest(method, host, path, msg = "", headers = {}, params = "") {
 
     const url = host + path;
     const baseUrl = new URL(path, host);
-    const searchParams = new URLSearchParams(params);
-    baseUrl.search = searchParams.toString();
+    baseUrl.search = params;
     const date = JSDate.getRFC1123DateString();
     headers["Connection"] = "keep-alive";
     headers["Date"] = date;
@@ -2262,9 +2261,10 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
  * @param {string} host 
  * @param {string} path 
  * @param {string} UUID
+ * @param {string} params
  * @returns 
  */
-async function reqTabloDevice(method, host, path, UUID) {
+async function reqTabloDevice(method, host, path, UUID, params) {
     const headers = {};
     /**
      * @type {any}
@@ -2287,7 +2287,7 @@ async function reqTabloDevice(method, host, path, UUID) {
         dataIn["device_id"] = UUID;
         dataIn["platform"] = "ios";
     }
-    return await makeTabloRequest(method, host, path, method == "POST" ? JSON.stringify(dataIn) : "", headers);
+    return await makeTabloRequest(method, host, path, method == "POST" ? JSON.stringify(dataIn) : "", headers, params);
 }
 
 class Encryption {
