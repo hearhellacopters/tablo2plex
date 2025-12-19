@@ -86,7 +86,8 @@ PROGRAM
     .option('-o, --outdir <string>', 'Overide the output directory. Default is excution directory (overides .env file)')
     .option('-v, --device <string>', 'Server ID of the Tablo device to use if you have more than 1. (overides .env file)')
     .option('-u, --user <string>', 'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
-    .option('-w, --pass <string>', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)');
+    .option('-w, --pass <string>', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)')
+    .option('-a, --ip_address <string>','Set the IP Address of Tablo2Plex add statically');
     
 PROGRAM.parse(process.argv);
 
@@ -435,21 +436,28 @@ const DEVICE_ID = _confrim_id();
  * @returns {string} example ``'127.0.0.1'``
  */
 function _get_local_IPv4_address() {
-    const interfaces = os.networkInterfaces();
+    if(ARGV.ip_address){
+        return ARGV.ip_address;
+    //check env
+    } else if (process.env.IP_ADDRESS) {
+        return process.env.IP_ADDRESS;
+    } else {
+        const interfaces = os.networkInterfaces();
 
-    for (const interfaceName in interfaces) {
-        const networkInterface = interfaces[interfaceName];
+        for (const interfaceName in interfaces) {
+            const networkInterface = interfaces[interfaceName];
 
-        if (networkInterface) {
-            for (const entry of networkInterface) {
-                if (!entry.internal && entry.family === 'IPv4') {
-                    return entry.address;
+            if (networkInterface) {
+                for (const entry of networkInterface) {
+                    if (!entry.internal && entry.family === 'IPv4') {
+                        return entry.address;
+                    }
                 }
             }
         }
-    }
 
-    return '127.0.0.1'; // Default to localhost if no external IPv4 address is found
+        return '127.0.0.1'; // Default to localhost if no external IPv4 address is found
+    }
 };
 
 /**

@@ -89,23 +89,24 @@ Besides the ``.env`` settings, you can run the proxy with a command line to forc
 
 Use the ``.env`` file to set the options you would like to use with the Tablo device and proxy. You can also pass them as a command line at start.
 
-| `.env` Variable          | Commandline       | Type      | Desc    |
-| :---                     | :---              | :---:     | :---    |
-| ``-none-``               | ``-c,--creds``    | `boolean` | Force the app to ask for a login again to create new credentials files (Checks every time the app runs) |
-| ``-none-``               | ``-l,--lineup``   | `boolean` | Force the app to pull a new channel line up from the Tablo servers. (Can be done at anytime while running.) |
-|``NAME``                  | ``-n,--name``     | `string`  | Name of the device that shows up in Plex. Default `"Tablo 4th Gen Proxy"` |
-|``DEVICE_ID``             | ``-f,--id``       | `string`  | Fake ID of the device for when you have more than one device on the network. Default `"12345679"` |
-|``PORT``                  | ``-p,--port``     | `string`  | Change the port the app runs on (default ``8181``)|
-|``LINEUP_UPDATE_INTERVAL``| ``-i,--interval`` | `string`  | How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.|
-|``CREATE_XML``            | ``-x,--xml``      | `boolean` | Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
-|``GUIDE_DAYS``            | ``-d,--days``     | `number`  | The amount of days the guide will populate. The more days, the longer it will take to populate on update. Default ``2``, max ``7`` |
-|``INCLUDE_PSEUDOTV_GUIDE``| ``-s,--pseudo``   | `boolean` | Due to issues with Plex not loading more than one EPG, you can include the guide data with your guide as long as it's at /.pseudotv/xmltv.xml. Default ``false``|
-|``LOG_LEVEL``             | ``-g,--level``    | `string`  | The amount of data you would like to see in the console. `"debug", "warn", "error" or "info"`. Default ``error`` and lower<br>Note: It's recommended after using `"debug"` that you clear your log files if any were generated.|
-|``SAVE_LOG``              | ``-k,--log``      | `boolean` | Create a file of all console output to the /logs folder. Default ``false``|
-|``OUT_DIR``               | ``-o,--outdir``   | `string`  | Overide the output directory. Default is excution directory. (Disabled in `.env` by default) |
-|``TABLO_DEVICE``          | ``-v,--device``   | `string`  | Server ID of the Tablo device to use if you have more than one on your account. (Disabled in `.env` by default)  |
-|``USER_NAME``             | ``-u,--user``     | `string`  | Username to use for when creds.bin isn't present. (Disabled in `.env` by default) |
-|``USER_PASS``             | ``-w,--pass``     | `string`  | Password to use for when creds.bin isn't present. (Disabled in `.env` by default) |
+| `.env` Variable          | Commandline        | Type      | Desc    |
+| :---                     | :---               | :---:     | :---    |
+| ``-none-``               | ``-c,--creds``     | `boolean` | Force the app to ask for a login again to create new credentials files (Checks every time the app runs) |
+| ``-none-``               | ``-l,--lineup``    | `boolean` | Force the app to pull a new channel line up from the Tablo servers. (Can be done at anytime while running.) |
+|``NAME``                  | ``-n,--name``      | `string`  | Name of the device that shows up in Plex. Default `"Tablo 4th Gen Proxy"` |
+|``DEVICE_ID``             | ``-f,--id``        | `string`  | Fake ID of the device for when you have more than one device on the network. Default `"12345679"` |
+|``PORT``                  | ``-p,--port``      | `string`  | Change the port the app runs on (default ``8181``)|
+|``LINEUP_UPDATE_INTERVAL``| ``-i,--interval``  | `string`  | How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.|
+|``CREATE_XML``            | ``-x,--xml``       | `boolean` | Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
+|``GUIDE_DAYS``            | ``-d,--days``      | `number`  | The amount of days the guide will populate. The more days, the longer it will take to populate on update. Default ``2``, max ``7`` |
+|``INCLUDE_PSEUDOTV_GUIDE``| ``-s,--pseudo``    | `boolean` | Due to issues with Plex not loading more than one EPG, you can include the guide data with your guide as long as it's at /.pseudotv/xmltv.xml. Default ``false``|
+|``LOG_LEVEL``             | ``-g,--level``     | `string`  | The amount of data you would like to see in the console. `"debug", "warn", "error" or "info"`. Default ``error`` and lower<br>Note: It's recommended after using `"debug"` that you clear your log files if any were generated.|
+|``SAVE_LOG``              | ``-k,--log``       | `boolean` | Create a file of all console output to the /logs folder. Default ``false``|
+|``OUT_DIR``               | ``-o,--outdir``    | `string`  | Overide the output directory. Default is excution directory. (Disabled in `.env` by default) |
+|``TABLO_DEVICE``          | ``-v,--device``    | `string`  | Server ID of the Tablo device to use if you have more than one on your account. (Disabled in `.env` by default)  |
+|``USER_NAME``             | ``-u,--user``      | `string`  | Username to use for when creds.bin isn't present. (Disabled in `.env` by default) |
+|``USER_PASS``             | ``-w,--pass``      | `string`  | Password to use for when creds.bin isn't present. (Disabled in `.env` by default) |
+|``IP_ADDRESS``            | ``-a,--ip_address``| `string`  | Set the IP Address of Tablo2Plex add statically. (Disabled in `.env` by default)|
 
 ### Plex Configuration
 
