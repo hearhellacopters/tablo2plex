@@ -161,7 +161,7 @@ const SCHEDULE_GUIDE = path.join(DIR_NAME, "schedule_guide.json");
 const GUIDE_FILE = path.join(DIR_NAME, "guide.xml");
 
 /**
- * @type {{[key:string]:{GuideNumber:string, GuideName:string, URL:string, type:string, srcURL:string}}}
+ * @type {{[key:string]:{GuideNumber:string, GuideName:string, URL:string, type:string, srcURL:string, streamUrl: string}}}
  */
 var LINEUP_DATA = {};
 
@@ -311,28 +311,57 @@ async function _channel(req, res) {
     const selectedChannel = LINEUP_DATA[channelId];
 
     if (selectedChannel) {
-        if (selectedChannel.type == "ott") {
-            // request from internet
+        // check if there is a srcURL
+        if (selectedChannel.srcURL == undefined) {
+            Logger.error('srcURL missing from requested channel:');
 
-            // check if there is a srcURL
-            if(selectedChannel.srcURL == undefined){
-                Logger.error('srcURL missing from requested channel:');
+            Logger.error(selectedChannel);
 
-                Logger.error(selectedChannel);
+            res.status(500).send('Failed to find stream url.');
 
-                res.status(500).send('Failed to find stream url.');
+            return;
+        }
 
-                return;
-            }
+        if (CURRENT_STREAMS < TUNER_COUNT) {
+            const channelReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID, "lh");
 
             try {
+                /**
+                 * @type {{token: string, expires: string, keepalive: number, playlist_url: string, video_details: {container_format: string, flags: any[]}}}
+                 */
+                const channelJSON = JSON.parse(channelReq.toString());
+                // check if there is a playlist_url
+                if (channelJSON.playlist_url == undefined) {
+                    Logger.error('playlist_url missing from requested channel:');
+
+                    Logger.error(channelJSON);
+
+                    Logger.error(selectedChannel);
+
+                    res.status(500).send('Failed to find playlist url.');
+
+                    return;
+                }
+
+                Logger.debug("Tablo Response:");
+
+                Logger.debug(channelJSON);
+
                 const ffmpeg = spawn('ffmpeg', [
-                    '-i', selectedChannel.srcURL,
+                    '-i', channelJSON.playlist_url,
                     '-c', 'copy',
                     '-f', 'mpegts',
                     '-v', `repeat+level+${FFMPEG_LOG_LEVEL}`,
                     'pipe:1'
                 ]);
+
+                if (selectedChannel.type == "ota") {
+                    CURRENT_STREAMS += 1;
+
+                    Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/, "")} connected to ${channelId}, spawning ffmpeg stream.`);
+                } else {
+                    Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/, "")} connected to ${channelId} (IPTV), spawning ffmpeg stream.`);
+                }
 
                 res.setHeader('Content-Type', 'video/mp2t');
 
@@ -356,7 +385,13 @@ async function _channel(req, res) {
                 });
 
                 req.on('close', () => {
-                    Logger.info('Client disconnected, killing ffmpeg');
+                    if (selectedChannel.type == "ota") {
+                        CURRENT_STREAMS -= 1;
+
+                        Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/, "")} disconnected from ${channelId}, killing ffmpeg`);
+                    } else {
+                        Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/, "")} disconnected from ${channelId} (IPTV), killing ffmpeg`);
+                    }
 
                     ffmpeg.kill('SIGINT');
                 });
@@ -370,91 +405,14 @@ async function _channel(req, res) {
 
                 return;
             }
-        } else if (selectedChannel.type == "ota") {
-            // request from device
-            if (CURRENT_STREAMS < TUNER_COUNT) {
-                const channelReq = await reqTabloDevice("POST", CREDS_DATA.device.url, `/guide/channels/${channelId}/watch`, CREDS_DATA.UUID, "lh");
+        } else {
+            Logger.error(`Client ${ip && ip.replace(/::ffff:/, "")} connected to ${channelId}, but max streams are running.`);
 
-                try {
-                    /**
-                     * @type {{token: string, expires: string, keepalive: number, playlist_url: string, video_details: {container_format: string, flags: any[]}}}
-                     */
-                    const channelJSON = JSON.parse(channelReq.toString());
+            res.status(500).send('Failed to start stream');
 
-                    if(channelJSON.playlist_url == undefined){
-                        Logger.error('playlist_url missing from requested channel:');
-
-                        Logger.error(channelJSON);
-
-                        Logger.error(selectedChannel);
-
-                        res.status(500).send('Failed to find playlist url.');
-
-                        return;
-                    }
-
-                    Logger.debug("Tablo Response:");
-
-                    Logger.debug(channelJSON);
-
-                    const ffmpeg = spawn('ffmpeg', [
-                        '-i', channelJSON.playlist_url,
-                        '-c', 'copy',
-                        '-f', 'mpegts',
-                        '-v', `repeat+level+${FFMPEG_LOG_LEVEL}`,
-                        'pipe:1'
-                    ]);
-
-                    CURRENT_STREAMS += 1;
-
-                    Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/, "")} connected to ${channelId}, spawning ffmpeg stream.`);
-
-                    res.setHeader('Content-Type', 'video/mp2t');
-
-                    ffmpeg.stdout.pipe(res);
-
-                    ffmpeg.stderr.on('data', (data) => {
-                        switch (FFMPEG_LOG_LEVEL) {
-                        case "info":
-                            Logger.info(`[ffmpeg] ${data}`);
-                            break;
-                        case "debug":
-                            Logger.debug(`[ffmpeg] ${data}`);
-                            break;
-                        case "warning":
-                            Logger.warn(`[ffmpeg] ${data}`);
-                            break;
-                        default:
-                            Logger.error(`[ffmpeg] ${data}`);
-                            break;
-                    }
-                    });
-
-                    req.on('close', () => {
-                        CURRENT_STREAMS -= 1;
-
-                        Logger.info(`${C_HEX.red_yellow}[${CURRENT_STREAMS}/${TUNER_COUNT}]${C_HEX.reset} Client ${ip && ip.replace(/::ffff:/, "")} disconnected from ${channelId}, killing ffmpeg`);
-
-                        ffmpeg.kill('SIGINT');
-                    });
-
-                    return;
-                } catch (error) {
-                    // @ts-ignore
-                    Logger.error('Error starting stream:', error.message);
-
-                    res.status(500).send('Failed to start stream');
-
-                    return;
-                }
-            } else {
-                Logger.error(`Client ${ip && ip.replace(/::ffff:/, "")} connected to ${channelId}, but max streams are running.`);
-
-                res.status(500).send('Failed to start stream');
-
-                return;
-            }
+            return;
         }
+
     } else {
         res.status(404).send('Channel not found');
 
@@ -543,7 +501,7 @@ async function _run_server() {
 
                 Logger.info(`or ${C_HEX.blue}${guideLoc}${C_HEX.reset}`);
             }
-            if(LOG_LEVEL == "debug"){
+            if (LOG_LEVEL == "debug") {
                 Logger.debug("Debug mode is active!");
 
                 Logger.debug(`It is recommended that you have ${C_HEX.blue}SAVE_LOG${C_HEX.reset} = ${C_HEX.green}true${C_HEX.reset} while debugging.`);
@@ -584,7 +542,7 @@ async function reqCreds() {
 
         path = "/api/v2/login/";
 
-        headers['User-Agent'] = 'Tablo-FAST/1.7.0 (Mobile; iPhone; iOS 16.6)';
+        headers['User-Agent'] = 'Tablo-FAST/2.0.0 (Mobile; iPhone; iOS 16.6)';
 
         headers['Content-Type'] = 'application/json';
 
@@ -1173,7 +1131,7 @@ async function cacheGuideData() {
                     const reqPathTD = path1 + el.identifier + "/airings/" + guideDay + "/";
 
                     const headers = {
-                        'User-Agent': 'Tablo-FAST/1.7.0 (Mobile; iPhone; iOS 16.6)',
+                        'User-Agent': 'Tablo-FAST/2.0.0 (Mobile; iPhone; iOS 16.6)',
                         'Accept': '*/*',
                         "Authorization": CREDS_DATA.lighthousetvAuthorization,
                         'Lighthouse': CREDS_DATA.Lighthouse
@@ -1227,7 +1185,7 @@ async function parseLineup(lineup = undefined) {
     /**
      * @type {channelLineup[]}
      */
-    var lineupParse = lineup ?? FS.readJSON(LINEUP_FILE); 
+    var lineupParse = lineup ?? FS.readJSON(LINEUP_FILE);
     try {
         for (let i = 0; i < lineupParse.length; i++) {
             const el = lineupParse[i];
@@ -1238,6 +1196,7 @@ async function parseLineup(lineup = undefined) {
                     GuideName: el.ota.callSign,
                     URL: `${SERVER_URL}/channel/${el.identifier}`,
                     type: "ota",
+                    streamUrl: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`,
                     srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
                 }
             } else if (el.kind == "ott") {
@@ -1246,7 +1205,8 @@ async function parseLineup(lineup = undefined) {
                     GuideName: el.ott.callSign,
                     URL: `${SERVER_URL}/channel/${el.identifier}`,
                     type: "ott",
-                    srcURL: el.ott.streamUrl
+                    streamUrl: el.ott.streamUrl,
+                    srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`,
                 }
             } else {
                 Logger.error("Unknown lineup type:");
@@ -1276,7 +1236,7 @@ async function makeLineup() {
 
     headers['Accept'] = '*/*';
 
-    headers['User-Agent'] = 'Tablo-FAST/1.7.0 (Mobile; iPhone; iOS 16.6)';
+    headers['User-Agent'] = 'Tablo-FAST/2.0.0 (Mobile; iPhone; iOS 16.6)';
 
     headers["Authorization"] = CREDS_DATA.lighthousetvAuthorization;
 
@@ -1314,7 +1274,7 @@ async function makeLineup() {
             Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
             await reqCreds();
-        } 
+        }
 
         SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
@@ -1388,7 +1348,7 @@ async function makeLineup() {
         process.stdin.resume();
 
         process.stdin.on('data', async (key) => {
-            if (key[0] == 0x78){ // x key
+            if (key[0] == 0x78) { // x key
                 if (SCHEDULE) {
                     SCHEDULE.cancel();
                 }
@@ -1399,7 +1359,7 @@ async function makeLineup() {
                 setTimeout(() => {
                     process.exit(0);
                 }, 2000);
-            } else if (key[0] == 0x6C){ // l key
+            } else if (key[0] == 0x6C) { // l key
                 if (SCHEDULE) {
                     await SCHEDULE.runTask();
                 }
