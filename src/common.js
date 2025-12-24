@@ -70,25 +70,27 @@ PROGRAM
     .name(pack.name)
     .description(`${C_HEX.blue}Tablo2Plex server${C_HEX.reset}`)
     .version(pack.version)
-    .addHelpText(`beforeAll`, "Use the .env file to set options")
-    .option('-c, --creds', 'Force creation of new creds file.')
-    .option('-l, --lineup', 'Force creation of a fresh channel lineup file.')
+    .addHelpText(`beforeAll`,            "Use the .env file to set options")
+    .option('-c, --creds',               'Force creation of new creds file.')
+    .option('-l, --lineup',              'Force creation of a fresh channel lineup file.')
 
-    .option('-n, --name <string>', 'Name of the device that shows up in Plex. (overides .env file)')
-    .option('-f, --id <string>', 'Fake ID of the device for when you have more than one device on the network. (overides .env file)')
-    .option('-p, --port <string>', 'Overide the port. (overides .env file)')
-    .option('-i, --interval <number>', 'How often the app rechecks the server for the channel lineup in days. (overides .env file)')
-    .option('-x, --xml <boolean>', 'If you want to create an xml guide for the channels from Tablo\'s data instead of Plex. (overides .env file)')
-    .option('-d, --days <number>', 'The amount of days the guide will populate (overides .env file)')
-    .option('-s, --pseudo <boolean>', 'Include the guide data with your guide as long as it\'s at \/.pseudotv\/xmltv.xml (overides .env file)')
-    .option('-g, --level <boolean>', 'Logger level. (overides .env file)')
-    .option('-k, --log <boolean>', 'If you want to create a log file of all console output. (overides .env file)')
-    .option('-o, --outdir <string>', 'Overide the output directory. Default is excution directory (overides .env file)')
-    .option('-v, --device <string>', 'Server ID of the Tablo device to use if you have more than 1. (overides .env file)')
-    .option('-u, --user <string>', 'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
-    .option('-w, --pass <string>', 'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)')
-    .option('-a, --ip_address <string>','Set the IP Address of Tablo2Plex add statically');
-    
+    .option('-n, --name <string>',       'Name of the device that shows up in Plex. (overides .env file)')
+    .option('-f, --id <string>',         'Fake ID of the device for when you have more than one device on the network. (overides .env file)')
+    .option('-p, --port <string>',       'Overide the port. (overides .env file)')
+    .option('-i, --interval <number>',   'How often the app rechecks the server for the channel lineup in days. (overides .env file)')
+    .option('-x, --xml <boolean>',       'If you want to create an xml guide for the channels from Tablo\'s data instead of Plex. (overides .env file)')
+    .option('-d, --days <number>',       'The amount of days the guide will populate (overides .env file)')
+    .option('-s, --pseudo <boolean>',    'Include the guide data with your guide as long as it\'s at \/.pseudotv\/xmltv.xml (overides .env file)')
+    .option('-g, --level <boolean>',     'Logger level. (overides .env file)')
+    .option('-k, --log <boolean>',       'If you want to create a log file of all console output. (overides .env file)')
+    .option('-o, --outdir <string>',     'Overide the output directory. Default is excution directory (overides .env file)')
+    .option('-v, --device <string>',     'Server ID of the Tablo device to use if you have more than 1. (overides .env file)')
+    .option('-u, --user <string>',       'Username to use for when creds.bin isn\'t present. (Note: will auto select profile)')
+    .option('-w, --pass <string>',       'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)')
+    .option('-a, --ip_address <string>', 'Set the IP Address of Tablo2Plex add statically. (overides .env file)')
+    .option(`-e, --guide <number>`,      'How often to update your XML guide data in hours, default once a day. (overides .env file)')
+    ;
+
 PROGRAM.parse(process.argv);
 
 /**
@@ -102,11 +104,11 @@ const ARGV = PROGRAM.opts();
  * @returns {string} directory name
  */
 function _get_dir_name() {
-    if(ARGV.outdir){
+    if (ARGV.outdir) {
         return ARGV.outdir;
-    } else if(process.env.OUT_DIR){
+    } else if (process.env.OUT_DIR) {
         return ARGV.OUT_DIR;
-    // @ts-ignore
+        // @ts-ignore
     } else if (process.pkg) {
         return path.dirname(process.execPath);
     } else {
@@ -127,9 +129,9 @@ const DIR_NAME = _get_dir_name();
  * @returns {string|undefined} port
  */
 function _confrim_username() {
-    if(ARGV.user){
+    if (ARGV.user) {
         return ARGV.user;
-    //check env
+        //check env
     } else if (process.env.USER_NAME) {
         return process.env.USER_NAME;
     } else {
@@ -148,9 +150,9 @@ const USER_NAME = _confrim_username();
  * @returns {string|undefined} port
  */
 function _confrim_password() {
-    if(ARGV.pass){
+    if (ARGV.pass) {
         return ARGV.pass;
-    //check env
+        //check env
     } else if (process.env.USER_PASS) {
         return process.env.USER_PASS;
     } else {
@@ -175,7 +177,7 @@ const AUTO_PROFILE = USER_NAME != undefined ? true : false;
  */
 function _confrim_log_level() {
     var level;
-    if(ARGV.level){
+    if (ARGV.level) {
         level = ARGV.level;
     } else {
         level = process.env.LOG_LEVEL;
@@ -203,13 +205,13 @@ const LOG_LEVEL = _confrim_log_level();
  */
 function _confrim_ffmpeg_log_level() {
     var level;
-    if(ARGV.level){
+    if (ARGV.level) {
         level = ARGV.level;
     } else {
         level = process.env.LOG_LEVEL;
     }
     switch (level) {
-         case "debug":
+        case "debug":
             return "debug";
         case "warn":
             return "warning";
@@ -238,9 +240,9 @@ const IP_ADDRESS = _get_local_IPv4_address();
  * @returns {string} port
  */
 function _confrim_port() {
-    if(ARGV.port){
+    if (ARGV.port) {
         return ARGV.port;
-    //check env
+        //check env
     } else if (process.env.PORT == "" || process.env.PORT == undefined) {
         return "8181";
     } else {
@@ -259,9 +261,9 @@ const PORT = _confrim_port();
  * @param {string|undefined} value 
  */
 function _confrim_boolean(value) {
-    if (typeof value == "boolean"){
+    if (typeof value == "boolean") {
         return value;
-    } 
+    }
     else if (value == undefined) {
         return false;
     }
@@ -279,10 +281,10 @@ function _confrim_boolean(value) {
 /**
  * confrim to save logs
  */
-function _confrim_save_log(){
-    if(ARGV.log){
+function _confrim_save_log() {
+    if (ARGV.log) {
         return _confrim_boolean(ARGV.log);
-    //check env
+        //check env
     } else if (process.env.SAVE_LOG) {
         return _confrim_boolean(process.env.SAVE_LOG);
     } else {
@@ -295,10 +297,10 @@ const SAVE_LOG = _confrim_save_log();
 /**
  * confrim xml file output
  */
-function _confrim_xml(){
-    if(ARGV.xml){
+function _confrim_xml() {
+    if (ARGV.xml) {
         return _confrim_boolean(ARGV.xml);
-    //check env
+        //check env
     } else if (process.env.CREATE_XML) {
         return _confrim_boolean(process.env.CREATE_XML);
     } else {
@@ -311,10 +313,10 @@ const CREATE_XML = _confrim_xml();
 /**
  * confrim xml file output
  */
-function _confrim_pseudo(){
-    if(ARGV.pseudo){
+function _confrim_pseudo() {
+    if (ARGV.pseudo) {
         return _confrim_boolean(ARGV.pseudo);
-    //check env
+        //check env
     } else if (process.env.INCLUDE_PSEUDOTV_GUIDE) {
         return _confrim_boolean(process.env.INCLUDE_PSEUDOTV_GUIDE);
     } else {
@@ -328,7 +330,7 @@ const INCLUDE_PSEUDOTV_GUIDE = _confrim_pseudo();
  * Day to pull in advance for line up
  */
 function _confrim_guide_days() {
-    if(ARGV.days){
+    if (ARGV.days) {
         var num = Number(ARGV.days);
         if (num > 0 && num < 8) {
             return num;
@@ -336,7 +338,7 @@ function _confrim_guide_days() {
         else {
             return 2;
         }
-    //check env
+        //check env
     } else if (process.env.GUIDE_DAYS == "" || process.env.GUIDE_DAYS == undefined) {
         return 2;
     } else {
@@ -398,10 +400,10 @@ const _LOG_LEVEL = _find_log_level();
 /**
  * confrims name of device
  */
-function _confrim_name(){
-    if(ARGV.name){
+function _confrim_name() {
+    if (ARGV.name) {
         return ARGV.name;
-    //check env
+        //check env
     } else if (process.env.NAME) {
         return process.env.NAME;
     } else {
@@ -417,10 +419,10 @@ const NAME = _confrim_name();
 /**
  * confrims name of device
  */
-function _confrim_id(){
-    if(ARGV.id){
+function _confrim_id() {
+    if (ARGV.id) {
         return ARGV.id;
-    //check env
+        //check env
     } else if (process.env.DEVICE_ID) {
         return process.env.DEVICE_ID;
     } else {
@@ -436,9 +438,9 @@ const DEVICE_ID = _confrim_id();
  * @returns {string} example ``'127.0.0.1'``
  */
 function _get_local_IPv4_address() {
-    if(ARGV.ip_address){
+    if (ARGV.ip_address) {
         return ARGV.ip_address;
-    //check env
+        //check env
     } else if (process.env.IP_ADDRESS) {
         return process.env.IP_ADDRESS;
     } else {
@@ -463,15 +465,15 @@ function _get_local_IPv4_address() {
 /**
  * confrims update interval
  */
-function _confrim_interval(){
-    if(ARGV.interval){
-        if(Number.isNaN(Number(ARGV.interval))){
+function _confrim_lineup_interval() {
+    if (ARGV.interval) {
+        if (Number.isNaN(Number(ARGV.interval))) {
             return 30 * (24 * 60 * 60 * 1000);
         }
         return Number(ARGV.interval) * (24 * 60 * 60 * 1000)
-    //check env
+        //check env
     } else if (process.env.LINEUP_UPDATE_INTERVAL) {
-        if(Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL))){
+        if (Number.isNaN(Number(process.env.LINEUP_UPDATE_INTERVAL))) {
             return 30 * (24 * 60 * 60 * 1000);
         }
         return Number(process.env.LINEUP_UPDATE_INTERVAL) * (24 * 60 * 60 * 1000)
@@ -483,7 +485,32 @@ function _confrim_interval(){
 /**
  * Time in days for each lineup update
  */
-const LINEUP_UPDATE_INTERVAL = _confrim_interval();
+const LINEUP_UPDATE_INTERVAL = _confrim_lineup_interval();
+
+/**
+ * confrims update interval
+ */
+function _confrim_guide_interval() {
+    if (ARGV.interval) {
+        if (Number.isNaN(Number(ARGV.guide))) {
+            return 24 * (60 * 60 * 1000);
+        }
+        return Number(ARGV.guide) * (60 * 60 * 1000)
+        //check env
+    } else if (process.env.GUIDE_UPDATE_INTERVAL) {
+        if (Number.isNaN(Number(process.env.GUIDE_UPDATE_INTERVAL))) {
+            return 24 * (60 * 60 * 1000);
+        }
+        return Number(process.env.GUIDE_UPDATE_INTERVAL) * (60 * 60 * 1000)
+    } else {
+        return 24 * (60 * 60 * 1000);
+    }
+}
+
+/**
+ * Time in hours for guide update
+ */
+const GUIDE_UPDATE_INTERVAL = _confrim_guide_interval();
 
 /**
  * confrims device to use
@@ -551,11 +578,7 @@ class JSDate {
      * @returns {string}
      */
     static getRFC1123DateString(date = undefined) {
-        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const monthsOfYear = [
-            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-        ];
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (date != undefined) {
             if (typeof date == "string" ||
                 typeof date == "number"
@@ -568,16 +591,20 @@ class JSDate {
         } else {
             date = new Date();
         };
-
-        const dayOfWeek = daysOfWeek[date.getUTCDay()];
-        const dayOfMonth = String(date.getUTCDate()).padStart(2, '0');
-        const month = monthsOfYear[date.getUTCMonth()];
-        const year = date.getUTCFullYear();
-        const hours = String(date.getUTCHours()).padStart(2, '0');
-        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-        const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-
-        return `${dayOfWeek}, ${dayOfMonth} ${month} ${year} ${hours}:${minutes}:${seconds} GMT`;
+        /**
+         * @type {Intl.DateTimeFormatOptions}
+         */
+        const options = {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            timeZone: timeZone,
+            timeZoneName: 'short' // Includes "EST" or "EDT"
+        };
+        return date.toLocaleString('en-US', options);
     }
 
     /**
@@ -1436,100 +1463,127 @@ async function choose(title, questions) {
 };
 
 class Scheduler {
-    runAt = new Date();
     interval = 0;
-    task = async () => { };
+    taskFn = async () => { };
     nextCheck = "";
     schedulerFile = "";
-    label = "Default task"; // Update channel lineup
+    label = "Default task";
+    MAX_TIMEOUT = 2147483647;
     /**
-     * Sets a new scheduled time and task.
-     * @param {string} schedulerFile - JSON file to write the date.
-     * @param {string} label - The name of the task
-     * @param {number} interval - How often the task should run in milliseconds
-     * @param {() => Promise<void>} taskFn - The async task to run at the scheduled time.
-     */
+      * Sets a new scheduled time and task.
+      * @param {string} schedulerFile JSON file to write the date.
+      * @param {string} label The name of the task
+      * @param {number} interval How often the task should run in milliseconds
+      * @param {() => Promise<void>} taskFn The async task to run at the scheduled time.
+      */
     constructor(schedulerFile, label, interval, taskFn) {
-
-        this.interval = interval;
-
         this.schedulerFile = schedulerFile;
-
-        if (!FS.fileExists(schedulerFile)) {
-            this.nextCheck = JSDate.getRFC1123DateString();
-
-            const newFile = {
-                interval: this.interval,
-                nextCheck: this.nextCheck
-            };
-
-            FS.writeJSON(newFile, schedulerFile);
-        }
-        else {
-            const readFile = FS.readJSON(schedulerFile);
-
-            this.interval = readFile.interval;
-
-            this.nextCheck = readFile.nextCheck;
-        }
-
-        this.runAt = new Date(this.nextCheck);
-
-        if (isNaN(this.runAt.getTime())) {
-            Logger.error("Invalid Scheduler time string:", this.nextCheck);
-            return;
-        }
 
         this.label = label;
 
-        this.task = taskFn;
+        this.taskFn = taskFn;
+
+        this.timeoutId = null;
+
+        if (!FS.fileExists(schedulerFile)) {
+            this.interval = interval;
+
+            this.nextCheck = JSDate.getRFC1123DateString();
+
+            this._saveToFile();
+        } else {
+            const data = JSON.parse(fs.readFileSync(schedulerFile, 'utf8'));
+
+            this.interval = data.interval;
+
+            this.nextCheck = data.nextCheck;
+        }
+
+        if (isNaN(new Date(this.nextCheck).getTime())) {
+            Logger.error("Invalid Scheduler time string:", this.nextCheck);
+
+            this.nextCheck = JSDate.getRFC1123DateString();
+
+            this._saveToFile();
+        }
+    }
+
+    _saveToFile() {
+        fs.writeFileSync(this.schedulerFile, JSON.stringify({
+            interval: this.interval,
+            nextCheck: this.nextCheck
+        }, null, 4));
     }
 
     async scheduleNextRun() {
-        if (this.runAt.getTime() - JSDate.ct <= 0) {
+        const now = new Date().getTime();
+
+        const next = new Date(this.nextCheck).getTime();
+
+        if (now >= next) {
             await this.runTask();
+        } else {
+            const delay = next - now;
+
+            Logger.info(`${this.label} scheduled for ${this.nextCheck}`);
+
+            this._setTimeout(() => this.runTask(), delay);
         }
-        this.timeout = setInterval(async () => {
-            if (this.runAt.getTime() - JSDate.ct <= 0) {
-                await this.runTask();
-            }
-        }, 24 * 60 * 60 * 1000); // once a day
         return;
     }
 
-    async runTask() {
-        try {
-            await this.task();
-
-            this.nextCheck = JSDate.getRFC1123DateString(JSDate.ct + this.interval);
-
-            this.runAt = new Date(this.nextCheck);
-
-            // write file;
-            const newFile = {
-                interval: this.interval,
-                nextCheck: this.nextCheck
-            };
-
-            FS.writeJSON(newFile, this.schedulerFile);
-
-            Logger.info(`${this.label} finished running. Next run scheduled for ${this.nextCheck}`);
-
-            return;
-        } catch (e) {
-            Logger.error(`${this.label} failed:`, e);
-
-            return;
+    /**
+     * @param {() => Promise<void>} callback 
+     * @param {number} delay 
+     */
+    _setTimeout(callback, delay) {
+        if (delay > this.MAX_TIMEOUT) {
+            this.timeoutId = setTimeout(() => {
+                const remaining = new Date(this.nextCheck).getTime() - new Date().getTime();
+                this._setTimeout(callback, remaining);
+            }, this.MAX_TIMEOUT);
+        } else {
+            this.timeoutId = setTimeout(callback, Math.max(0, delay));
         }
     }
 
-    /**
-     * Cancels the scheduled task.
-     */
+    async runTask() {
+        this.cancel();
+
+        Logger.info(`Running ${this.label}...`);
+
+        await this.taskFn();
+
+        const now = new Date();
+
+        this.nextCheck = JSDate.getRFC1123DateString(new Date(now.getTime() + this.interval).getTime());
+
+        Logger.info(`${this.label} finished running. Next run scheduled for ${this.nextCheck}`);
+
+        this._saveToFile();
+
+        this._schedule();
+        return;
+    }
+
+    _schedule() {
+        const now = new Date().getTime();
+
+        const next = new Date(this.nextCheck).getTime();
+
+        const delay = Math.max(0, next - now);
+
+        this._setTimeout(() => this.runTask(), delay);
+        return;
+    }
+
     cancel() {
-        if (this.timeout) {
-            clearTimeout(this.timeout);
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+
+            this.timeoutId = null;
         }
+        return;
     }
 }
 
@@ -2244,7 +2298,7 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
     Logger.debug(headers);
 
     Logger.debug(msg);
-    
+
     return await fetch(
         baseUrl.toString(),
         {
@@ -2368,15 +2422,15 @@ class Encryption {
 }
 
 /**
- * 
  * @param {string} method 
  * @param {string} hostname 
  * @param {string} path 
- *  @param {any} headers 
+ * @param {any} headers 
  * @param {string|Buffer} data 
- * @returns {Promise<string>}
+ * @param {boolean} justHeaders
+ * @returns {Promise<any>}
  */
-async function makeHTTPSRequest(method, hostname, path, headers, data = "") {
+async function makeHTTPSRequest(method, hostname, path, headers, data = "", justHeaders = false) {
     return new Promise((resolve, reject) => {
         // Convert the data
         if (typeof data == "string") {
@@ -2408,6 +2462,10 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "") {
 
             // The whole response has been received. Parse and resolve the result.
             res.on('end', () => {
+                if (justHeaders) {
+                    resolve(res.headers);
+                }
+
                 try {
                     resolve(dataIn);
                 } catch (parseError) {
@@ -2689,6 +2747,7 @@ module.exports = {
     ARGV,
     PORT,
     LINEUP_UPDATE_INTERVAL,
+    GUIDE_UPDATE_INTERVAL,
     INCLUDE_PSEUDOTV_GUIDE,
     CREATE_XML,
     GUIDE_DAYS,

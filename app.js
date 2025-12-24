@@ -19,6 +19,7 @@ const {
     ARGV,
     PORT,
     LINEUP_UPDATE_INTERVAL,
+    GUIDE_UPDATE_INTERVAL,
     INCLUDE_PSEUDOTV_GUIDE,
     GUIDE_DAYS,
     CREATE_XML,
@@ -1077,8 +1078,6 @@ async function parseGuideData(lineUp) {
 
         xw.endDocument();
 
-        Logger.info(`Finished creating guide data.`);
-
         return xw.toString() || "";
     } catch (error) {
         Logger.error(`Issue creating guide data.`, error);
@@ -1125,26 +1124,25 @@ async function cacheGuideData() {
 
             const file = path.join(tempFolder, fileName);
 
+            const reqPathTD = path1 + el.identifier + "/airings/" + guideDay + "/";
+
+            const headers = {
+                'User-Agent': 'Tablo-FAST/2.0.0 (Mobile; iPhone; iOS 16.6)',
+                'Accept': '*/*',
+                "Authorization": CREDS_DATA.lighthousetvAuthorization,
+                'Lighthouse': CREDS_DATA.Lighthouse
+            };
+
             if (!FS.fileExists(file)) {
-
+                // new file
                 try {
-                    const reqPathTD = path1 + el.identifier + "/airings/" + guideDay + "/";
-
-                    const headers = {
-                        'User-Agent': 'Tablo-FAST/2.0.0 (Mobile; iPhone; iOS 16.6)',
-                        'Accept': '*/*',
-                        "Authorization": CREDS_DATA.lighthousetvAuthorization,
-                        'Lighthouse': CREDS_DATA.Lighthouse
-                    };
-
                     const dataIn1 = await makeHTTPSRequest("GET", host, reqPathTD, headers);
 
                     if (dataIn1) {
                         FS.loadingBar(totalFiles, ++currentFile);
 
                         FS.writeJSON(dataIn1, file);
-                    }
-                    else {
+                    } else {
                         currentFile++;
 
                         Logger.error(`Could not write ${fileName}`, dataIn1);
@@ -1155,7 +1153,29 @@ async function cacheGuideData() {
                     Logger.error(error);
                 }
             } else {
-                FS.loadingBar(totalFiles, ++currentFile);
+                // check file size
+                try {
+                    const head = await makeHTTPSRequest("HEAD", host, reqPathTD, headers, "", true);
+
+                    const sizeIn = parseInt(head['content-length']);
+
+                    const stats = await fs.promises.stat(file);
+
+                    if(stats.size != sizeIn){
+                        // if they don't match, there is new data, get the file
+                        const dataIn1 = await makeHTTPSRequest("GET", host, reqPathTD, headers);
+
+                        FS.writeJSON(dataIn1, file);
+                        
+                        FS.loadingBar(totalFiles, ++currentFile);
+                    } else {
+                        FS.loadingBar(totalFiles, ++currentFile);
+                    }
+                } catch (error) {
+                    currentFile++;
+
+                    Logger.error(error);
+                }
             }
         }
     }
@@ -1242,8 +1262,6 @@ async function makeLineup() {
 
     headers['Content-Type'] = 'application/json';
 
-    Logger.info("Requesting a new channel lineup file!");
-
     try {
         const retData = await makeHTTPSRequest("GET", host, path, headers);
 
@@ -1255,8 +1273,6 @@ async function makeLineup() {
         FS.writeJSON(JSON.stringify(lineupParse, null, 4), LINEUP_FILE);
 
         await parseLineup(lineupParse);
-
-        Logger.info("Successfully created new channel lineup file!");
     } catch (error) {
         Logger.error("Issue with creating new lineup file.", error);
     }
@@ -1281,7 +1297,7 @@ async function makeLineup() {
         await SCHEDULE.runTask();
 
         if (CREATE_XML) {
-            GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
+            GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", GUIDE_UPDATE_INTERVAL, cacheGuideData);
 
             await GUIDE.runTask();
         }
@@ -1297,6 +1313,7 @@ async function makeLineup() {
 
         await exit();
     } else {
+        // Then run the server.
         if (!FS.fileExists(CREDS_FILE)) {
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
@@ -1304,17 +1321,11 @@ async function makeLineup() {
             Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
             await reqCreds();
-
-            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
-
-            await SCHEDULE.scheduleNextRun();
-        } else if (!FS.fileExists(LINEUP_FILE)) {
-            Logger.info(`No current channel lineup!`);
-
-            SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
-
-            await SCHEDULE.scheduleNextRun();
         }
+
+        console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}x${C_HEX.yellow}' at anytime to exit.${C_HEX.reset}`);
+
+        console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}l${C_HEX.yellow}' at anytime to request a new channel lineup / guide.${C_HEX.reset}`);
 
         try {
             await readCreds();
@@ -1324,22 +1335,17 @@ async function makeLineup() {
             await SCHEDULE.scheduleNextRun();
 
             await parseLineup();
+
+            if (CREATE_XML) {
+                GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", GUIDE_UPDATE_INTERVAL, cacheGuideData);
+
+                await GUIDE.scheduleNextRun();
+            }
         } catch (error) {
             Logger.error("Could not read lineup file. Check permissions and rerun app with --lineup.");
 
             return await exit();
         }
-
-        if (CREATE_XML) {
-            GUIDE = new Scheduler(SCHEDULE_GUIDE, "Update guide data", (24 * 60 * 60 * 1000), cacheGuideData);
-
-            await GUIDE.scheduleNextRun();
-        }
-
-        // Then run the server.
-        console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}x${C_HEX.yellow}' at anytime to exit.${C_HEX.reset}`);
-
-        console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}l${C_HEX.yellow}' at anytime to request a new channel lineup / guide.${C_HEX.reset}`);
 
         if (process.stdin.isTTY) {
             process.stdin.setRawMode(true);
