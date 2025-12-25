@@ -1052,11 +1052,15 @@ async function parseGuideData(lineUp) {
             }
             process.stdout.write('\n');
             // clear spam
-            process.stdout.moveCursor(0, -1);
-            process.stdout.clearLine(1);
-            process.stdout.moveCursor(0, -1);
-            process.stdout.clearLine(1);
-            process.stdout.cursorTo(0);
+            if (process.stdout.isTTY) {
+                process.stdout.moveCursor(0, -1);
+                process.stdout.clearLine(1);
+                process.stdout.moveCursor(0, -1);
+                process.stdout.clearLine(1);
+                process.stdout.cursorTo(0);
+            } else {
+                Logger.info('Guide data update completed.');
+            }
         }
 
         if (INCLUDE_PSEUDOTV_GUIDE) {
@@ -1181,11 +1185,14 @@ async function cacheGuideData() {
     }
     process.stdout.write('\n');
     // clear spam
-    process.stdout.moveCursor(0, -1);
-    process.stdout.clearLine(1);
-    process.stdout.moveCursor(0, -1);
-    process.stdout.clearLine(1);
-    process.stdout.cursorTo(0);
+    if (process.stdout.isTTY) {
+        process.stdout.moveCursor(0, -1);
+        process.stdout.clearLine(0);
+        process.stdout.cursorTo(0);
+        process.stdout.write('\n');  // Add one clean newline
+    } else {
+        Logger.info('Guide data caching completed.');
+    }
 
     FS.deleteUnlistedFiles(tempFolder, neededFiles);
 
@@ -1283,6 +1290,8 @@ async function makeLineup() {
     if (ARGV.lineup) {
         // rerun line pull
         // creates new Scheduler file
+        Logger.info(`${C_HEX.yellow}Running forced one-time lineup/guide update...${C_HEX.reset}`);
+
         if (!FS.fileExists(CREDS_FILE)) {
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
@@ -1290,7 +1299,7 @@ async function makeLineup() {
             Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
             await reqCreds();
-        }
+        }        
 
         SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
@@ -1302,14 +1311,20 @@ async function makeLineup() {
             await GUIDE.runTask();
         }
 
+        Logger.info(`${C_HEX.green}Forced update complete.${C_HEX.reset}`);
+
         await exit();
     } else if (ARGV.creds) {
         // creds need setting up
+        Logger.info(`${C_HEX.yellow}Running forced one-time credentials creation...${C_HEX.reset}`);
+
         Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
         SCHEDULE = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
         await SCHEDULE.runTask();
+
+        Logger.info(`${C_HEX.green}Forced credentials creation complete.${C_HEX.reset}`);
 
         await exit();
     } else {
@@ -1323,9 +1338,11 @@ async function makeLineup() {
             await reqCreds();
         }
 
-        console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}x${C_HEX.yellow}' at anytime to exit.${C_HEX.reset}`);
+        if (process.stdin.isTTY) {
+            console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}x${C_HEX.yellow}' at anytime to exit.${C_HEX.reset}`);
 
-        console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}l${C_HEX.yellow}' at anytime to request a new channel lineup / guide.${C_HEX.reset}`);
+            console.log(`${C_HEX.yellow}-- Press '${C_HEX.green}l${C_HEX.yellow}' at anytime to request a new channel lineup / guide.${C_HEX.reset}`);
+        }
 
         try {
             await readCreds();
@@ -1349,31 +1366,33 @@ async function makeLineup() {
 
         if (process.stdin.isTTY) {
             process.stdin.setRawMode(true);
+            process.stdin.resume();
+            process.stdin.setEncoding('utf8');
+
+            process.stdin.on('data', async (key) => {
+                if (key[0] == 0x78) { // x key
+                    if (SCHEDULE) {
+                        SCHEDULE.cancel();
+                    }
+                    if (GUIDE) {
+                        GUIDE.cancel();
+                    }
+                    console.log(`${C_HEX.blue}Exiting Process...${C_HEX.reset}`);
+                    setTimeout(() => {
+                        process.exit(0);
+                    }, 2000);
+                } else if (key[0] == 0x6C) { // l key
+                    if (SCHEDULE) {
+                        await SCHEDULE.runTask();
+                    }
+                    if (GUIDE) {
+                        await GUIDE.runTask();
+                    }
+                }
+            });
+        } else {
+            Logger.info('Running as service - no interactive key controls.');
         }
-
-        process.stdin.resume();
-
-        process.stdin.on('data', async (key) => {
-            if (key[0] == 0x78) { // x key
-                if (SCHEDULE) {
-                    SCHEDULE.cancel();
-                }
-                if (GUIDE) {
-                    GUIDE.cancel();
-                }
-                console.log(`${C_HEX.blue}Exiting Process...${C_HEX.reset}`);
-                setTimeout(() => {
-                    process.exit(0);
-                }, 2000);
-            } else if (key[0] == 0x6C) { // l key
-                if (SCHEDULE) {
-                    await SCHEDULE.runTask();
-                }
-                if (GUIDE) {
-                    await GUIDE.runTask();
-                }
-            }
-        });
 
         // Core function here
         _run_server();

@@ -1235,6 +1235,13 @@ class Logger {
  * @async
  */
 async function exit() {
+    // Just exit when runnning as a service
+    if (!process.stdin.isTTY) {
+        Logger.info(`${C_HEX.blue}Exiting Tablo2Plex...${C_HEX.reset}`);
+        
+        process.exit(0);
+    }
+
     // Enable keypress events on stdin
     keypress(process.stdin);
 
@@ -1624,15 +1631,23 @@ function _consoleLoadingBar(totalSteps, currentStep, withSize = false) {
     // Create the loading bar string
     const loadingBar = '[' + '='.repeat(bars) + '>'.repeat(bars < barLength ? 1 : 0) + ' '.repeat(barLength - bars) + ']';
 
-    // Print the loading bar to the console
-    process.stdout.clearLine(0); // Clear the previous line
-    process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
-    process.stdout.write(
-        `${C_HEX.green}${loadingBar}${C_HEX.reset} - ${percentage.toFixed(2)}%` +
+    const message = `${C_HEX.green}${loadingBar}${C_HEX.reset} - ${percentage.toFixed(2)}%` +
         (withSize
             ? ` of ${_formatFileSize(totalSteps)} / ${_formatFileSize(currentStep)}`
             : ` - ${currentStep} of ${totalSteps}`)
-    );
+
+    // Print the loading bar to the console
+    if (process.stdout.isTTY) {
+        process.stdout.clearLine(0);
+        process.stdout.cursorTo(0);
+        process.stdout.write(message);
+        // If there's a moveCursor call elsewhere (e.g., to go up a line at end), guard it similarly
+        if (currentStep === totalSteps) {
+            process.stdout.moveCursor(0, -1);  // Optional: only if needed for final cleanup
+        }
+    } else {
+        process.stdout.write(message + '\n');  // Safe logging for service/journal
+    }
     return 1;
 };
 
