@@ -1,4 +1,8 @@
 // @ts-check
+/**
+ * @typedef {import('node:buffer').Buffer} Buffer
+ */
+
 require('dotenv').config();
 const os = require('os');
 const {

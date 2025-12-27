@@ -1,9 +1,4 @@
 // @ts-check
-/**
- * @typedef {import('node:buffer').Buffer} Buffer
- * @typedef {import('node:querystring').ParsedUrlQuery} ParsedUrlQuery
- */
-
 require('dotenv').config();
 const pack = require('../package.json');
 const { Command } = require('commander');

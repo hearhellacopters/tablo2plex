@@ -1,5 +1,4 @@
 // @ts-check
-
 const express = require('express');
 
 const {
@@ -28,7 +27,7 @@ const Logger = require('./Logger');
  * @param {string} port
  */
 async function _middleware(req, res, next, port) {
-    const ip = req.ip;
+    const ip = req.ip || "";
 
     const path = req.path;
 
@@ -43,7 +42,7 @@ async function _middleware(req, res, next, port) {
 
 
     if (!(path == "/discover.json" || path == "/lineup_status.json")) {
-        Logger.debug(`Req ${ip && ip.replace(/::ffff:/, "")}:${port}${path}`);
+        Logger.debug(`Req ${ip.replace(/::ffff:/, "")}:${port}${path}`);
     }
 
     if (req.method === 'OPTIONS') {
