@@ -175,10 +175,6 @@ function _consoleLoadingBar(totalSteps, currentStep, withSize = false) {
         process.stdout.cursorTo(0);
 
         process.stdout.write(message);
-        // If there's a moveCursor call elsewhere (e.g., to go up a line at end), guard it similarly
-        if (currentStep === totalSteps) {
-            process.stdout.moveCursor(0, -1);  // Optional: only if needed for final cleanup
-        }
     } else {
         process.stdout.write(message + '\n');  // Safe logging for service/journal
     }

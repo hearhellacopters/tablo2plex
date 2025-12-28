@@ -285,6 +285,7 @@ function startUpMessage(){
         Logger.debug("When finished, please delete all logs as they will contain sensitive private info.");
     }
 };
+
 /**
  * Makes discover object end point data
  */
@@ -342,7 +343,7 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
 
     baseUrl.search = params;
 
-    const date = JSDate.getRFC1123DateString();
+    const date = JSDate.deviceDate();
 
     headers["Connection"] = "keep-alive";
 
@@ -386,7 +387,7 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
             return Buffer.alloc(0);
         }
     });
-}
+};
 
 /**
  * Handles all Tablo device requests
@@ -396,7 +397,6 @@ async function makeTabloRequest(method, host, path, msg = "", headers = {}, para
  * @param {string} path 
  * @param {string} UUID
  * @param {string} params
- * @returns 
  */
 async function reqTabloDevice(method, host, path, UUID, params) {
     const headers = {};
@@ -488,7 +488,6 @@ async function _guide_serve(req, res) {
         return;
     }
 };
-
 
 /**
  * basic https request
@@ -852,6 +851,9 @@ async function reqCreds() {
     return 1;
 };
 
+/**
+ * Requests new creds file
+ */
 async function readCreds() {
     if (CREDS_DATA.UUID == undefined) {
         const masterCreds = FS.readFile(CREDS_FILE);
@@ -893,6 +895,7 @@ async function readCreds() {
 }
 
 /**
+ * Creates XML guide data from downloaded guide files
  * 
  * @param {channelLineup[]} lineUp 
  */
@@ -1140,6 +1143,9 @@ async function parseGuideData(lineUp) {
     }
 }
 
+/**
+ * Downloads guide files 
+ */
 async function cacheGuideData() {
     const tempFolder = path.join(DIR_NAME, "tempGuide");
 
@@ -1237,9 +1243,10 @@ async function cacheGuideData() {
     // clear spam
     if (process.stdout.isTTY) {
         process.stdout.moveCursor(0, -1);
-        process.stdout.clearLine(0);
+        process.stdout.clearLine(1);
+        process.stdout.moveCursor(0, -1);
+        process.stdout.clearLine(1);
         process.stdout.cursorTo(0);
-        process.stdout.write('\n');  // Add one clean newline
     } else {
         Logger.info('Guide data caching completed.');
     }
@@ -1254,9 +1261,9 @@ async function cacheGuideData() {
 }
 
 /**
+ * Creates channel lineup data
  * 
  * @param {channelLineup[]|undefined} lineup 
- * @returns 
  */
 async function parseLineup(lineup = undefined) {
     /**
@@ -1300,6 +1307,9 @@ async function parseLineup(lineup = undefined) {
     }
 }
 
+/**
+ * Requests new channel line up data
+ */
 async function makeLineup() {
     await readCreds();
 

@@ -49,7 +49,7 @@ var GUIDE_SCHEDULER;
             Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
             await reqCreds();
-        }        
+        }
 
         LINEUP_SCHEDULER = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
 
@@ -120,7 +120,7 @@ var GUIDE_SCHEDULER;
             process.stdin.setEncoding('utf8');
 
             process.stdin.on('data', async (key) => {
-                if (key[0] == 0x78) { // x key
+                if (key.toString() == 'x' || key.toString() == 'X') { // x key
                     if (LINEUP_SCHEDULER) {
                         LINEUP_SCHEDULER.cancel();
                     }
@@ -131,7 +131,7 @@ var GUIDE_SCHEDULER;
                     setTimeout(() => {
                         process.exit(0);
                     }, 2000);
-                } else if (key[0] == 0x6C) { // l key
+                } else if (key.toString() == "l" || key.toString() == "L") { // l key
                     if (LINEUP_SCHEDULER) {
                         await LINEUP_SCHEDULER.runTask();
                     }

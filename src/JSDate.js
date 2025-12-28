@@ -86,6 +86,50 @@ class JSDate {
     }
 
     /**
+     * RFC 1123 type date for headers
+     * 
+     * @static 
+     * @param {string|number|Date|undefined} date
+     * @returns {string}
+     */
+    static deviceDate(date = undefined){
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const monthsOfYear = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        if (date != undefined) {
+            if (typeof date == "string" ||
+                typeof date == "number"
+            ) {
+                date = new Date(date);
+            } else if (!(date instanceof Date)) {
+                //Logger.error("Date must be an instanceof new Date()");
+
+                date = new Date();
+            }
+        } else {
+            date = new Date();
+        };
+
+        const dayOfWeek = daysOfWeek[date.getUTCDay()];
+
+        const dayOfMonth = String(date.getUTCDate()).padStart(2, '0');
+
+        const month = monthsOfYear[date.getUTCMonth()];
+
+        const year = date.getUTCFullYear();
+
+        const hours = String(date.getUTCHours()).padStart(2, '0');
+
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+
+        const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+
+        return `${dayOfWeek}, ${dayOfMonth} ${month} ${year} ${hours}:${minutes}:${seconds} GMT`;
+    }
+
+    /**
      * 
      * @param {number} days 
      * @returns {string[]}
