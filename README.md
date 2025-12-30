@@ -1,6 +1,6 @@
 # Tablo2Plex: HDHomeRun Proxy for Tablo TV (4th Gen)
 
-<img src="./imgs/logo.png" width="200">
+<img src="./imgs/logo.png" width="200" alt="logo">
 
 __Tablo2Plex__ is a Node.js-based server app that emulates an HDHomeRun device to allow Plex to access live TV streams from a Tablo 4th Gen device. It dynamically proxies Tablo's M3U8 `.ts` segment streams and serves them in a format Plex understands, enabling live playback and DVR functionality within Plex.
 
@@ -31,7 +31,7 @@ With the Tablo 4th Gen devices, they added an Auth layer to their communications
 
 How it works:
 
-<img src="./imgs/chart.png" width="750">
+<img src="./imgs/chart.png" width="750" alt="chart">
 
 ## Getting Started
 
@@ -73,45 +73,45 @@ npm run build:mac:arm # or
 npm run build:mac:x64
 ```
 
-**Note: Don't build for a system you aren't currently running.** Mac needs code signing and that is only possible on a Mac machine.
+__Note: Don't build for a system you aren't currently running.__ Mac needs code signing and that is only possible on a Mac machine.
 
 Make sure you edit your `.env` file with your personal info. See the [Configuration](#proxy-configuration) section for available variables and command lines.
 
 ## Proxy Setup
 
-When you first run the proxy, you will be asked to log into your Tablo account by providing your email and password. **Note: Your email and password are never stored locally and all returned credentials are stored encrypted.** But when you first log in, your password and email is transmitted in plain text (nice one Tablo). So please don't setup the proxy on an untrusted network. 
+When you first run the proxy, you will be asked to log into your Tablo account by providing your email and password. __Note: Your email and password are never stored locally and all returned credentials are stored encrypted.__ But when you first log in, your password and email is transmitted in plain text (nice one Tablo). So please don't setup the proxy on an untrusted network.
 
 It will ask you to select a profile or device if there is more than one on your account. Once done, it will download the channel lineup and start the proxy.
 
-Besides the ``.env`` settings, you can run the proxy with a command line to force or overide some actions: 
+Besides the ``.env`` settings, you can run the proxy with a command line to force or overide some actions:
 
 ### Proxy Configuration
 
 Use the ``.env`` file to set the options you would like to use with the Tablo device and proxy. You can also pass them as a command line at start.
 
-| `.env` Variable          | Commandline        | Type      | Desc    |
-| :---                     | :---               | :---:     | :---    |
-| ``-none-``               | ``-c,--creds``     | `boolean` | Force the app to ask for a login again to create new credentials files (Checks every time the app runs) |
-| ``-none-``               | ``-l,--lineup``    | `boolean` | Force the app to pull a new channel line up from the Tablo servers. (Can be done at anytime while running.) |
-|``NAME``                  | ``-n,--name``      | `string`  | Name of the device that shows up in Plex. Default `"Tablo 4th Gen Proxy"` |
-|``DEVICE_ID``             | ``-f,--id``        | `string`  | Fake ID of the device for when you have more than one device on the network. Default `"12345679"` |
-|``PORT``                  | ``-p,--port``      | `string`  | Change the port the app runs on (default ``8181``)|
-|``LINEUP_UPDATE_INTERVAL``| ``-i,--interval``  | `string`  | How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.|
-|``CREATE_XML``            | ``-x,--xml``       | `boolean` | Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false``|
-|``GUIDE_DAYS``            | ``-d,--days``      | `number`  | The amount of days the guide will populate. The more days, the longer it will take to populate on update. Default ``2``, max ``7`` |
-|``INCLUDE_PSEUDOTV_GUIDE``| ``-s,--pseudo``    | `boolean` | Due to issues with Plex not loading more than one EPG, you can include the guide data with your guide as long as it's at /.pseudotv/xmltv.xml. Default ``false``|
-|``LOG_LEVEL``             | ``-g,--level``     | `string`  | The amount of data you would like to see in the console. `"debug", "warn", "error" or "info"`. Default ``error`` and lower<br>Note: It's recommended after using `"debug"` that you clear your log files if any were generated.|
-|``SAVE_LOG``              | ``-k,--log``       | `boolean` | Create a file of all console output to the /logs folder. Default ``false``|
-|``OUT_DIR``               | ``-o,--outdir``    | `string`  | Overide the output directory. Default is excution directory. (Disabled in `.env` by default) |
-|``TABLO_DEVICE``          | ``-v,--device``    | `string`  | Server ID of the Tablo device to use if you have more than one on your account. (Disabled in `.env` by default)  |
-|``USER_NAME``             | ``-u,--user``      | `string`  | Username to use for when creds.bin isn't present. (Disabled in `.env` by default) |
-|``USER_PASS``             | ``-w,--pass``      | `string`  | Password to use for when creds.bin isn't present. (Disabled in `.env` by default) |
-|``IP_ADDRESS``            | ``-a,--ip_address``| `string`  | Set the IP Address of Tablo2Plex add statically. (Disabled in `.env` by default)|
-|``GUIDE_UPDATE_INTERVAL`` | ``-e,--guide``     | `number`  | How often to update your XML guide data in hours. Default ``24`` |
+| `.env` Variable          | Commandline        | Type      | Desc                                                                                                                                                                                                                                    |
+| :---                     | :---               | :---:     | :---                                                                                                                                                                                                                                    |
+| ``-none-``               | ``-c,--creds``     | `boolean` | Force the app to ask for a login again to create new credentials files (Checks every time the app runs)                                                                                                                                 |
+| ``-none-``               | ``-l,--lineup``    | `boolean` | Force the app to pull a new channel line up from the Tablo servers. (Can be done at anytime while running.)                                                                                                                             |
+|``NAME``                  | ``-n,--name``      | `string`  | Name of the device that shows up in Plex. Default `"Tablo 4th Gen Proxy"`                                                                                                                                                               |
+|``DEVICE_ID``             | ``-f,--id``        | `string`  | Fake ID of the device for when you have more than one device on the network. Default `"12345679"`                                                                                                                                       |
+|``PORT``                  | ``-p,--port``      | `string`  | Change the port the app runs on (default ``8181``)                                                                                                                                                                                      |
+|``LINEUP_UPDATE_INTERVAL``| ``-i,--interval``  | `string`  | How often the app will repopulate the channel lineup. Default once every ``30`` days. Can be triggered any time the proxy is running.                                                                                                   |
+|``CREATE_XML``            | ``-x,--xml``       | `boolean` | Creates an XML guide file from Tablo's data instead of letting Plex populate it with their data. Can take much longer to build and happens more often but is more accurate. Builds 2 days worth on content every day. Default ``false`` |
+|``GUIDE_DAYS``            | ``-d,--days``      | `number`  | The amount of days the guide will populate. The more days, the longer it will take to populate on update. Default ``2``, max ``7``                                                                                                      |
+|``INCLUDE_PSEUDOTV_GUIDE``| ``-s,--pseudo``    | `boolean` | Due to issues with Plex not loading more than one EPG, you can include the guide data with your guide as long as it's at /.pseudotv/xmltv.xml. Default ``false``                                                                        |
+|``LOG_LEVEL``             | ``-g,--level``     | `string`  | The amount of data you would like to see in the console. `"debug", "warn", "error" or "info"`. Default ``error`` and lower<br>Note: It's recommended after using `"debug"` that you clear your log files if any were generated.         |
+|``SAVE_LOG``              | ``-k,--log``       | `boolean` | Create a file of all console output to the /logs folder. Default ``false``                                                                                                                                                              |
+|``OUT_DIR``               | ``-o,--outdir``    | `string`  | Overide the output directory. Default is excution directory. (Disabled in `.env` by default)                                                                                                                                            |
+|``TABLO_DEVICE``          | ``-v,--device``    | `string`  | Server ID of the Tablo device to use if you have more than one on your account. (Disabled in `.env` by default)                                                                                                                         |
+|``USER_NAME``             | ``-u,--user``      | `string`  | Username to use for when creds.bin isn't present. (Disabled in `.env` by default)                                                                                                                                                       |
+|``USER_PASS``             | ``-w,--pass``      | `string`  | Password to use for when creds.bin isn't present. (Disabled in `.env` by default)                                                                                                                                                       |
+|``IP_ADDRESS``            | ``-a,--ip_address``| `string`  | Set the IP Address of Tablo2Plex add statically. (Disabled in `.env` by default)                                                                                                                                                        |
+|``GUIDE_UPDATE_INTERVAL`` | ``-e,--guide``     | `number`  | How often to update your XML guide data in hours. Default ``24``                                                                                                                                                                        |
 
 ### Plex Configuration
 
-1. Open Plex and go to **Live TV & DVR > Setup**
+1. Open Plex and go to __Live TV & DVR > Setup__
 2. Plex should detect the device proxy automatically, if not you can add the displaying http address and port from the proxy.
 3. Follow the guide scan using a ZIP code or use the displaying XML endpoint instead
 4. Start watching live TV via Tablo!
@@ -124,19 +124,19 @@ Use the ``.env`` file to set the options you would like to use with the Tablo de
 
 First, clone the repo locally to a machine where you have Docker and Node.js installed. The Dockerfile and .dockerignore files for building the image are included in the project. Inside the cloned directory, build the tablo2plex image:
 
-```
-$ docker build -t tablo2plex .
+```bash
+docker build -t tablo2plex .
 ```
 
 This process will create a Node.js-based image with the required additional modules and ffmpeg installed to support tablo2plex. Now build and run the container via the [Docker run](https://docs.docker.com/reference/cli/docker/container/run/) command-line:
 
-```
-$ docker run -d -v ./output:/output -e USER_NAME=<your Tablo username> -e USER_PASS=<your Tablo password> tablo2plex
+```bash
+docker run -d -v ./output:/output -e USER_NAME=<your Tablo username> -e USER_PASS=<your Tablo password> tablo2plex
 ```
 
 If everything goes right and the container starts, you should see files in your ./output directory (or whatever directory you mounted to the /output volume for the container), including the logs subdirectory. The log should show something like this:
 
-```
+```cmd
 [info] No creds file found. Lets log into your Tablo account.
 [info] NOTE: Your password and email are never stored, but are transmitted in plain text.
 Please make sure you are on a trusted network before you continue.
@@ -155,26 +155,29 @@ Please make sure you are on a trusted network before you continue.
 [info] Server v0.9.3 is running on http://172.17.0.2:8181 with 2 tuners
 ```
 
-You can override additional environment variables by adding more `-e` parameters to the Docker command-line (ex. `-e GUIDE_DAYS=7 -e LOG_LEVEL=debug`). Once the creds.bin file is created with your encypted TabloTV credentials, you no longer need to specify the USER_NAME and USER_PASS parameters (this will also prevent your credentials from showing up on the command-line in a process list: the defaults of 'user' and 'pass' will appear but the program won't actually try to use them since the creds.bin file is already present).
+You can override additional environment variables by adding more `-e` parameters to the Docker command-line (ex. `-e GUIDE_DAYS=7 -e LOG_LEVEL=debug`). Once the creds.bin file is created with your encypted TabloTV credentials, you no longer need to specify the `USER_NAME` and `USER_PASS` parameters (this will also prevent your credentials from showing up on the command-line in a process list: the defaults of 'user' and 'pass' will appear but the program won't actually try to use them since the __creds.bin__ file is already present).
 
 Instead of the Docker command-line, you can also use a [Docker compose](https://docs.docker.com/reference/cli/docker/compose/) file. An [example YAML file](docker-compose-example.yaml) is included in the repo. Modify it for your particular environment and then use it to build and run the container:
 
-```
-$ docker compose -f compose.yaml up -d
+```bash
+docker compose -f compose.yaml up -d
 ```
 
-Like with the command-line approach, once your creds.bin file is present in the mounted /output volume, you can remove the USER_NAME and USER_PASS values from the file if you wish.
+Like with the command-line approach, once your creds.bin file is present in the mounted /output volume, you can remove the `USER_NAME` and `USER_PASS` values from the file if you wish.
 
 Running in Container Manager on a Synology NAS, it looks something like this:
 
-##### Creating the container
-<img src="./imgs/docker1.png" width="750"/>
+### Creating the container
 
-##### Mounted volume
-<img src="./imgs/docker2.png" width="750">
+<img src="./imgs/docker1.png" width="750" alt="docker1"/>
 
-##### Container logs
-<img src="./imgs/docker3.png" width="750">
+### Mounted volume
+
+<img src="./imgs/docker2.png" width="750" alt="docker2">
+
+### Container logs
+
+<img src="./imgs/docker3.png" width="750" alt="docker3">
 
 You should now have __Tablo2Plex__ running in a Docker container! [Configure Plex](#plex-configuration) and point it to the URL/port of __Tablo2Plex__.
 
@@ -188,4 +191,4 @@ MIT License
 
 ## Credits
 
-Built with ❤️ by HearHellacopters 
+Built with ❤️ by HearHellacopters

@@ -418,11 +418,11 @@ class FS {
      * @throws {Error} if data is not writable.
      */
     static writeFile(data, srcPath) {
-        ;
         // stringify if needed
         if (typeof data == "object" && !(data instanceof Buffer)) {
             data = JSON.stringify(data, null, 2);
         }
+        
         if (data instanceof Buffer || typeof data == "string") {
             _ensurePathExists(srcPath, data);
         } else {
@@ -442,12 +442,16 @@ class FS {
      */
     static readFile(srcPath) {
         const dir = path.dirname(srcPath);
+
         if (!_directoryExists(dir)) {
             Logger.error("Can not find folder to file being read: " + srcPath);
+
             exit();
         }
+
         if (!_fileExists(srcPath)) {
             Logger.error("Can not find file being read: " + srcPath);
+
             exit();
         }
         return fs.readFileSync(srcPath);
@@ -463,21 +467,30 @@ class FS {
      */
     static readJSON(srcPath) {
         const dir = path.dirname(srcPath);
+
         if (!_directoryExists(dir)) {
             Logger.error("Can not find folder to file being read: " + srcPath);
+            
             exit();
+
             return;
         }
+
         if (!_fileExists(srcPath)) {
             Logger.error("Can not find file being read: " + srcPath);
+
             exit();
+
             return;
         }
+
         try {
             const buf = fs.readFileSync(srcPath);
+
             return JSON.parse(buf.toString());
         } catch (error) {
             Logger.error("Could not parse JSON data: " + srcPath);
+
             return {};
         }
     };

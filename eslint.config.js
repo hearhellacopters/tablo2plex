@@ -8,8 +8,13 @@ module.exports = [
   jsdoc.configs['flat/recommended'],
   {
     "rules": {
+      "MD033": {
+        "allowed_elements": [
+          "img"
+        ]
+      },
       "jsdoc/require-description": 'warn', // ensure that a JSDoc message is needed for functions
-      "jsdoc/tag-lines": ["warn"|"error", "always",{"startLines":null,}], // turn off spacing for JSDoc
+      "jsdoc/tag-lines": ["warn" | "error", "always", { "startLines": null, }], // turn off spacing for JSDoc
       "semi": [2, "always"], // please use ; after statement
       "no-unexpected-multiline": "error", // please assign on the same line
       "no-unreachable": "error", // no code after returns

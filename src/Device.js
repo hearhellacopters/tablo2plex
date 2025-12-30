@@ -510,7 +510,6 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "", just
         }
 
         headers['Content-Length'] = Buffer.byteLength(data);
-
         // Define the options for the HTTPS request
         const options = {
             hostname: hostname,
@@ -519,31 +518,35 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "", just
             method: method,
             headers: headers
         };
-
         // Create the request
         const req = https.request(options, (res) => {
             let dataIn = '';
-
             // A chunk of data has been received.
             res.on('data', (chunk) => {
                 dataIn += chunk;
             });
-
             // The whole response has been received. Parse and resolve the result.
             res.on('end', () => {
                 if (justHeaders) {
                     resolve(res.headers);
                 }
 
-                try {
-                    resolve(dataIn);
-                } catch (parseError) {
-                    // @ts-ignore
-                    reject(new Error(`Failed to parse response: ${parseError.message}`));
+                if (res.statusCode == undefined || (res.statusCode < 200 || res.statusCode > 299)){
+                    Logger.error('Https request failed with status code:', res.statusCode);
+
+                    Logger.error('Error details:', dataIn);
+
+                    reject(new Error(`Https request failed with status code ${res.statusCode}`));
+                } else {
+                    try {
+                        resolve(dataIn);
+                    } catch (parseError) {
+                        // @ts-ignore
+                        reject(new Error(`Failed to parse response: ${parseError.message}`));
+                    }
                 }
             });
         });
-
         // Handle request errors
         req.on('error', (error) => {
             reject(error);
@@ -553,7 +556,6 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "", just
             // Write data to request body
             req.write(data);
         }
-
         // End the request
         req.end();
     });
@@ -1107,9 +1109,13 @@ async function parseGuideData(lineUp) {
             // clear spam
             if (process.stdout.isTTY) {
                 process.stdout.moveCursor(0, -1);
+
                 process.stdout.clearLine(1);
+
                 process.stdout.moveCursor(0, -1);
+                
                 process.stdout.clearLine(1);
+
                 process.stdout.cursorTo(0);
             } else {
                 Logger.info('Guide data update completed.');
@@ -1239,13 +1245,18 @@ async function cacheGuideData() {
             }
         }
     }
+
     process.stdout.write('\n');
     // clear spam
     if (process.stdout.isTTY) {
         process.stdout.moveCursor(0, -1);
+
         process.stdout.clearLine(1);
+
         process.stdout.moveCursor(0, -1);
+
         process.stdout.clearLine(1);
+
         process.stdout.cursorTo(0);
     } else {
         Logger.info('Guide data caching completed.');
