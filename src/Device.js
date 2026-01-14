@@ -532,11 +532,11 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "", just
                 }
 
                 if (res.statusCode == undefined || (res.statusCode < 200 || res.statusCode > 299)){
-                    Logger.error('Https request failed with status code:', res.statusCode);
+                    Logger.warn(`https://${hostname}${path} request failed with status code:`, res.statusCode);
 
-                    Logger.error('Error details:', dataIn);
+                    Logger.warn('Error details:', dataIn);
 
-                    reject(new Error(`Https request failed with status code ${res.statusCode}`));
+                    reject("");
                 } else {
                     try {
                         resolve(dataIn);
@@ -1216,6 +1216,8 @@ async function cacheGuideData() {
                 } catch (error) {
                     currentFile++;
 
+                    FS.writeJSON("[]", file);
+
                     Logger.error(error);
                 }
             } else {
@@ -1239,6 +1241,8 @@ async function cacheGuideData() {
                     }
                 } catch (error) {
                     currentFile++;
+
+                    FS.writeJSON("[]", file);
 
                     Logger.error(error);
                 }
