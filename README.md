@@ -108,6 +108,7 @@ Use the ``.env`` file to set the options you would like to use with the Tablo de
 |``USER_PASS``             | ``-w,--pass``      | `string`  | Password to use for when creds.bin isn't present. (Disabled in `.env` by default)                                                                                                                                                       |
 |``IP_ADDRESS``            | ``-a,--ip_address``| `string`  | Set the IP Address of Tablo2Plex add statically. (Disabled in `.env` by default)                                                                                                                                                        |
 |``GUIDE_UPDATE_INTERVAL`` | ``-e,--guide``     | `number`  | How often to update your XML guide data in hours. Default ``24``                                                                                                                                                                        |
+|``INCLUDE_OTT``           | ``-t, --ott``      | `boolean` | Include OTT (Over-The-Top) channels in the line up. Default ``true``                                                                                                                                                                    |
 
 ### Plex Configuration
 

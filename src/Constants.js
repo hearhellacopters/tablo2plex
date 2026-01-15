@@ -67,6 +67,7 @@ PROGRAM
     .option('-w, --pass <string>',       'Password to use for when creds.bin isn\'t present. (Note: will auto select profile)')
     .option('-a, --ip_address <string>', 'Set the IP Address of Tablo2Plex add statically. (overides .env file)')
     .option(`-e, --guide <number>`,      'How often to update your XML guide data in hours, default once a day. (overides .env file)')
+    .option(`-t, --ott <boolean>`,       'Include OTT (Over-The-Top) channels in the line up (overides .env file)')
     ;
 
 PROGRAM.parse(process.argv);
@@ -336,7 +337,7 @@ function _confirm_pseudo() {
     } else {
         return false;
     }
-}
+};
 
 /**
  * If pseudo channel is part of lineup
@@ -367,7 +368,7 @@ function _confirm_guide_days() {
             return 2;
         }
     }
-}
+};
 
 /**
  * XML guide days to populate
@@ -520,6 +521,27 @@ function _confirm_device() {
 };
 
 /**
+ * confirms to include OTT (Over-The-Top) channels in line up
+ * 
+ * @returns {boolean} port
+ */
+function _confirm_ott(){
+    if (ARGV.ott) {
+        return _confirm_boolean(ARGV.ott);
+        //check env
+    } else if (process.env.INCLUDE_OTT) {
+        return _confirm_boolean(process.env.INCLUDE_OTT);
+    } else {
+        return true;
+    }
+};
+
+/**
+ * Include OTT (Over-The-Top) channels in the line up 
+ */
+const INCLUDE_OTT = _confirm_ott();
+
+/**
  * Server ID of the selected Tablo device to use if you have more than 1
  */
 const TABLO_DEVICE = _confirm_device();
@@ -563,5 +585,6 @@ module.exports = {
     FFMPEG_LOG_LEVEL,
     CREDS_FILE,
     SCHEDULE_LINEUP,
-    SCHEDULE_GUIDE
+    SCHEDULE_GUIDE,
+    INCLUDE_OTT
 };

@@ -31,7 +31,8 @@ const {
     LOG_TYPE,
     CREATE_XML,
     FFMPEG_LOG_LEVEL,
-    CREDS_FILE
+    CREDS_FILE,
+    INCLUDE_OTT
 } = require('./Constants');
 const Encryption = require('./Encryption');
 const FS = require('./FS');
@@ -60,7 +61,7 @@ const CREDS_DATA = {};
 const LINEUP_FILE = path.join(DIR_NAME, "lineup.json");
 
 /**
- * @type {{[key:string]:{GuideNumber:string, GuideName:string, URL:string, type:string, srcURL:string, streamUrl: string}}}
+ * @type {{[key:string]:{GuideNumber:string, GuideName:string, ImageURL?:string, Affiliate?: string, VideoCodec?: string, AudioCodec?: string, HD?: number, URL:string, type:string, srcURL:string, streamUrl: string}}}
  */
 const LINEUP_DATA = {};
 
@@ -312,7 +313,7 @@ function makeDiscover(){
  * @param {Response} res 
  */
 async function _lineup(req, res) {
-var lineup = Object.values(LINEUP_DATA);
+    const lineup = Object.values(LINEUP_DATA);
 
     const headers = {
         'Content-Type': 'application/json'
@@ -894,7 +895,7 @@ async function readCreds() {
     } else {
         return;
     }
-}
+};
 
 /**
  * Creates XML guide data from downloaded guide files
@@ -907,14 +908,18 @@ async function parseGuideData(lineUp) {
 
         const xw = new XMLWriter(true);
 
-        xw.startDocument();
+        xw.startDocument("1.0","UTF-8");
 
         xw.startElement('tv');
 
-        xw.writeAttribute('generator-info-name', 'Tablo 4th Gen Proxy');
+        xw.writeAttribute('generator-info-name', NAME);
 
         for (let i = 0; i < lineUp.length; i++) {
             const el = lineUp[i];
+
+            if(INCLUDE_OTT == false && el.kind == "ott"){
+                continue;
+            }
 
             // write channel
             xw.startElement('channel');
@@ -922,7 +927,7 @@ async function parseGuideData(lineUp) {
             var channelNum = "";
 
             if (el.kind == "ota") {
-                channelNum = `${el.ota.major}.${el.ota.minor}`;
+                channelNum = `${el.ota.major}${el.ota.minor}1`;
 
                 xw.writeAttribute('id', channelNum);
 
@@ -934,7 +939,7 @@ async function parseGuideData(lineUp) {
 
                 xw.endElement(); // display-name
             } else {
-                channelNum = `${el.ott.major}.${el.ott.minor}`;
+                channelNum = `${el.ott.major}${el.ott.minor}1`;
 
                 xw.writeAttribute('id', channelNum);
 
@@ -1026,7 +1031,9 @@ async function parseGuideData(lineUp) {
 
                             xw.endElement(); // title
 
-                            xw.writeRaw('\n        <previously-shown/>');
+                            //xw.writeRaw('\n        <previously-shown/>');
+
+                            xw.startElement('previously-shown'); xw.endElement(); // spreviously-shown
 
                             xw.startElement('sub-title');
 
@@ -1056,6 +1063,27 @@ async function parseGuideData(lineUp) {
 
                             xw.endElement(); // title
                         }
+
+                        xw.startElement('date');
+
+                        var date = JSDate.xmlNow();
+
+                        switch (tdEL.kind) {
+                            case "episode":
+                                if(tdEL.episode.originalAirDate != null){
+                                    date = tdEL.episode.originalAirDate.replace(/-/g,"");
+                                }
+                                break;
+                            case "movieAiring":
+                                date = `${tdEL.movieAiring.releaseYear}0000`
+                                break;
+                            default:
+                                break;
+                        }
+
+                        xw.text(date);
+
+                        xw.endElement(); // date
 
                         if (tdEL.images.length != 0) {
                             xw.startElement('icon');
@@ -1147,7 +1175,7 @@ async function parseGuideData(lineUp) {
 
         return "";
     }
-}
+};
 
 /**
  * Downloads guide files 
@@ -1273,7 +1301,7 @@ async function cacheGuideData() {
     FS.writeFile(xmlData, GUIDE_FILE);
 
     return;
-}
+};
 
 /**
  * Creates channel lineup data
@@ -1289,23 +1317,42 @@ async function parseLineup(lineup = undefined) {
         for (let i = 0; i < lineupParse.length; i++) {
             const el = lineupParse[i];
 
+            var ImageURL;
+
+            if (el.logos.length != 0) {
+
+                const lightLarge = el.logos.find(self => self.kind == "lightLarge");
+
+                if (lightLarge) {
+                    ImageURL = lightLarge.url;
+                } else {
+                    ImageURL = el.logos[0].url;
+                }
+            }
+
             if (el.kind == "ota") {
                 LINEUP_DATA[el.identifier] = {
-                    GuideNumber: `${el.ota.major}.${el.ota.minor}`,
+                    GuideNumber: `${el.ota.major}${el.ota.minor}1`,
                     GuideName: el.ota.callSign,
+                    ImageURL: ImageURL,
+                    Affiliate: el.ota.network,
                     URL: `${SERVER_URL}/channel/${el.identifier}`,
                     type: "ota",
                     streamUrl: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`,
                     srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
                 }
             } else if (el.kind == "ott") {
-                LINEUP_DATA[el.identifier] = {
-                    GuideNumber: `${el.ott.major}.${el.ott.minor}`,
-                    GuideName: el.ott.callSign,
-                    URL: `${SERVER_URL}/channel/${el.identifier}`,
-                    type: "ott",
-                    streamUrl: el.ott.streamUrl,
-                    srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`,
+                if(INCLUDE_OTT){
+                    LINEUP_DATA[el.identifier] = {
+                        GuideNumber: `${el.ott.major}${el.ott.minor}1`,
+                        GuideName: el.ott.callSign,
+                        ImageURL: ImageURL,
+                        Affiliate: el.ott.network,
+                        URL: `${SERVER_URL}/channel/${el.identifier}`,
+                        type: "ott",
+                        streamUrl: el.ott.streamUrl,
+                        srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`,
+                    }
                 }
             } else {
                 Logger.error("Unknown lineup type:");
@@ -1320,7 +1367,7 @@ async function parseLineup(lineup = undefined) {
 
         return await exit();
     }
-}
+};
 
 /**
  * Requests new channel line up data
@@ -1350,7 +1397,18 @@ async function makeLineup() {
         /**
          * @type {channelLineup[]}
          */
-        const lineupParse = JSON.parse(retData);
+        var lineupParse = JSON.parse(retData);
+
+        if(INCLUDE_OTT == false){
+            var newlineupParse = [];
+            for (let i = 0; i < lineupParse.length; i++) {
+                const el = lineupParse[i];
+                if(el.kind != "ott"){
+                    newlineupParse.push(el);
+                }
+            }
+            lineupParse = newlineupParse;
+        }
 
         FS.writeJSON(JSON.stringify(lineupParse, null, 4), LINEUP_FILE);
 
