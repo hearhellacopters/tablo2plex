@@ -935,7 +935,7 @@ async function parseGuideData(lineUp) {
 
                 xw.writeAttribute('lang', 'en');
 
-                xw.text(el.ota.callSign);
+                xw.text(el.ota.network);
 
                 xw.endElement(); // display-name
             } else {
@@ -947,7 +947,7 @@ async function parseGuideData(lineUp) {
 
                 xw.writeAttribute('lang', 'en');
 
-                xw.text(el.ott.callSign);
+                xw.text(el.ott.network);
 
                 xw.endElement(); // display-name
             }
@@ -1313,6 +1313,7 @@ async function parseLineup(lineup = undefined) {
      * @type {channelLineup[]}
      */
     var lineupParse = lineup ?? FS.readJSON(LINEUP_FILE);
+
     try {
         for (let i = 0; i < lineupParse.length; i++) {
             const el = lineupParse[i];
@@ -1331,23 +1332,35 @@ async function parseLineup(lineup = undefined) {
             }
 
             if (el.kind == "ota") {
+                var GuideNumber = `${el.ota.major}.${el.ota.minor}`;
+
+                if(CREATE_XML){
+                    GuideNumber = `${el.ota.major}${el.ota.minor}1`;
+                }
+
                 LINEUP_DATA[el.identifier] = {
-                    GuideNumber: `${el.ota.major}${el.ota.minor}1`,
-                    GuideName: el.ota.callSign,
+                    GuideNumber: GuideNumber,
+                    GuideName: el.ota.network,
                     ImageURL: ImageURL,
-                    Affiliate: el.ota.network,
+                    Affiliate: el.ota.callSign,
                     URL: `${SERVER_URL}/channel/${el.identifier}`,
                     type: "ota",
                     streamUrl: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`,
                     srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
                 }
             } else if (el.kind == "ott") {
+                var GuideNumber = `${el.ott.major}.${el.ott.minor}`;
+
+                if(CREATE_XML){
+                    GuideNumber = `${el.ott.major}${el.ott.minor}1`;
+                }
+
                 if(INCLUDE_OTT){
                     LINEUP_DATA[el.identifier] = {
-                        GuideNumber: `${el.ott.major}${el.ott.minor}1`,
-                        GuideName: el.ott.callSign,
+                        GuideNumber: GuideNumber,
+                        GuideName: el.ott.network,
                         ImageURL: ImageURL,
-                        Affiliate: el.ott.network,
+                        Affiliate: el.ott.callSign,
                         URL: `${SERVER_URL}/channel/${el.identifier}`,
                         type: "ott",
                         streamUrl: el.ott.streamUrl,
