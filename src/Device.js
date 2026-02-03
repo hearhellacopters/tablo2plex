@@ -1239,13 +1239,17 @@ async function cacheGuideData() {
                     } else {
                         currentFile++;
 
-                        Logger.error(`Could not write ${fileName}`, dataIn1);
+                        Logger.error(`Could not write ${fileName}`);
+
+                        Logger.error(dataIn1);
                     }
                 } catch (error) {
                     currentFile++;
 
                     FS.writeJSON("[]", file);
 
+                    Logger.error("On new makeHTTPSRequest creating JSON:");
+                    
                     Logger.error(error);
                 }
             } else {
@@ -1271,6 +1275,8 @@ async function cacheGuideData() {
                     currentFile++;
 
                     FS.writeJSON("[]", file);
+
+                    Logger.error("On makeHTTPSRequest creating JSON:");
 
                     Logger.error(error);
                 }

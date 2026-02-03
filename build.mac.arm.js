@@ -10,7 +10,7 @@ const build = exe({
   out: "./tablo2plex-macos-arm",
   pkg: ["-C", "GZip"], // Specify extra pkg arguments
   version: pak.version,
-  target: "node18-macos-arm64",
+  target: "node24-macos-arm64",
   //icon: "./app.ico", // Application icons must be same size as prebuild target
   executionLevel: "highestAvailable",
   properties:{

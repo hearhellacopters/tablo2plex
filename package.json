@@ -1,6 +1,6 @@
 {
     "name": "tablo2plex",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "Tablo 4th Gen proxy to Plex server translation",
     "type": "commonjs",
     "main": "app.js",
@@ -30,12 +30,12 @@
         "xml-writer": "^1.7.0"
     },
     "engines": {
-        "node": ">=18.0.0"
+        "node": ">=24.0.0"
     },
     "devDependencies": {
-        "@hearhellacopters/exe": "^2.1.3",
-        "@types/node": "^20.14.11",
-        "@yao-pkg/pkg": "^5.15.0",
+        "@hearhellacopters/exe": "^2.1.5",
+        "@types/node": "^24.10.9",
+        "@yao-pkg/pkg": "^6.12.0",
         "commander": "^12.1.0",
         "eslint": "^9.4.0",
         "eslint-plugin-jsdoc": "^48.2.7"
