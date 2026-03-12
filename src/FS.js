@@ -400,11 +400,13 @@ class FS {
             filesToDelete.forEach(file => {
                 const filePath = path.join(directory, file);
 
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        Logger.error(`Error deleting file ${filePath}: ${err}`);
-                    }
-                });
+                if (_fileExists(filePath)) {
+                    fs.unlink(filePath, (err) => {
+                        if (err) {
+                            Logger.error(`Error deleting file ${filePath}: ${err}`);
+                        }
+                    });
+                }                
             });
         });
     }
