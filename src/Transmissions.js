@@ -6,8 +6,7 @@ const {
 } = require('./CommandLine');
 const {
     C_HEX,
-    PORT,
-    CREATE_XML,
+    CONST
 } = require('./Constants');
 const {
     startUpMessage,
@@ -116,7 +115,7 @@ async function runServer() {
         app.set('trust proxy', true);
         // Middleware to log requests by IP and path
         app.use(async (req, res, next) => {
-            return await _middleware(req, res, next, PORT);
+            return await _middleware(req, res, next, CONST.PORT);
         });
         // everything gets routed here to route.
         app.get("/discover.json", async (req, res) => {
@@ -135,7 +134,7 @@ async function runServer() {
             return await _channel(req, res);
         })
 
-        if (CREATE_XML) {
+        if (CONST.CREATE_XML) {
             app.get("/guide.xml", async (req, res) => {
                 return await _guide_serve(req, res);
             })
@@ -146,7 +145,7 @@ async function runServer() {
         })
 
         // Start the server
-        app.listen(PORT, () => {
+        app.listen(CONST.PORT, () => {
             startUpMessage();
         });
     }

@@ -4,10 +4,7 @@ const path = require('path');
 
 const {
     C_HEX,
-    LOG_TYPE,
-    LOG_LEVEL,
-    SAVE_LOG,
-    DIR_NAME
+    CONST
 } = require('./Constants');
 const JSDate = require('./JSDate');
 
@@ -85,7 +82,7 @@ class _CustomLog {
     }
 };
 
-const _cl = new _CustomLog(SAVE_LOG, DIR_NAME, LOG_TYPE, LOG_LEVEL);
+const _cl = new _CustomLog(CONST.SAVE_LOG, CONST.DIR_NAME, CONST.LOG_TYPE, CONST.LOG_LEVEL);
 
 /**
  * Class Logger. 

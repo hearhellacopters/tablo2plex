@@ -17,22 +17,7 @@ const {
 } = require('./CommandLine');
 const {
     C_HEX,
-    NAME,
-    TABLO_DEVICE,
-    INCLUDE_PSEUDOTV_GUIDE,
-    GUIDE_DAYS,
-    USER_NAME,
-    USER_PASS,
-    AUTO_PROFILE,
-    VERSION,
-    DEVICE_ID,
-    SERVER_URL,
-    DIR_NAME,
-    LOG_TYPE,
-    CREATE_XML,
-    FFMPEG_LOG_LEVEL,
-    CREDS_FILE,
-    INCLUDE_OTT
+    CONST
 } = require('./Constants');
 const Encryption = require('./Encryption');
 const FS = require('./FS');
@@ -58,7 +43,7 @@ const CREDS_DATA = {};
 /**
  * Source path to lineup.json
  */
-const LINEUP_FILE = path.join(DIR_NAME, "lineup.json");
+const LINEUP_FILE = path.join(CONST.DIR_NAME, "lineup.json");
 
 /**
  * @type {{[key:string]:{GuideNumber:string, GuideName:string, ImageURL?:string, Affiliate?: string, VideoCodec?: string, AudioCodec?: string, HD?: number, URL:string, type:string, srcURL:string, streamUrl: string}}}
@@ -68,7 +53,7 @@ const LINEUP_DATA = {};
 /**
  * Source path to guide.xml
  */
-const GUIDE_FILE = path.join(DIR_NAME, "guide.xml");
+const GUIDE_FILE = path.join(CONST.DIR_NAME, "guide.xml");
 
 /**
  * Amount of streams allowed
@@ -203,7 +188,7 @@ async function handleStreams(req, res, ip, channelId, selectedChannel){
                 '-i', channelJSON.playlist_url,
                 '-c', 'copy',
                 '-f', 'mpegts',
-                '-v', `repeat+level+${FFMPEG_LOG_LEVEL}`,
+                '-v', `repeat+level+${CONST.FFMPEG_LOG_LEVEL}`,
                 'pipe:1'
             ]);
 
@@ -220,7 +205,7 @@ async function handleStreams(req, res, ip, channelId, selectedChannel){
             ffmpeg.stdout.pipe(res);
 
             ffmpeg.stderr.on('data', (data) => {
-                switch (FFMPEG_LOG_LEVEL) {
+                switch (CONST.FFMPEG_LOG_LEVEL) {
                     case "info":
                         Logger.info(`[ffmpeg] ${data}`);
                         break;
@@ -270,15 +255,15 @@ async function handleStreams(req, res, ip, channelId, selectedChannel){
  * Start up message
  */
 function startUpMessage(){
-    Logger.info(`Server v${VERSION} is running on ${C_HEX.blue}${SERVER_URL}${C_HEX.reset} with ${TUNER_COUNT} tuners`);
-    if (CREATE_XML) {
-        Logger.info(`Guide data can be found at ${C_HEX.blue}${SERVER_URL}/guide.xml${C_HEX.reset}`);
+    Logger.info(`Server v${CONST.VERSION} is running on ${C_HEX.blue}${CONST.SERVER_URL}${C_HEX.reset} with ${TUNER_COUNT} tuners`);
+    if (CONST.CREATE_XML) {
+        Logger.info(`Guide data can be found at ${C_HEX.blue}${CONST.SERVER_URL}/guide.xml${C_HEX.reset}`);
 
-        const guideLoc = path.join(DIR_NAME, "guide.xml");
+        const guideLoc = path.join(CONST.DIR_NAME, "guide.xml");
 
         Logger.info(`or ${C_HEX.blue}${guideLoc}${C_HEX.reset}`);
     }
-    if (LOG_TYPE == "debug") {
+    if (CONST.LOG_TYPE == "debug") {
         Logger.debug("Debug mode is active!");
 
         Logger.debug(`It is recommended that you have ${C_HEX.blue}SAVE_LOG${C_HEX.reset} = ${C_HEX.green}true${C_HEX.reset} while debugging.`);
@@ -292,16 +277,16 @@ function startUpMessage(){
  */
 function makeDiscover(){
     return {
-        FriendlyName: NAME, // "Tablo 4th Gen Proxy",
+        FriendlyName: CONST.NAME, // "Tablo 4th Gen Proxy",
         Manufacturer: "tablo2plex",
         ModelNumber: "HDHR3-US",
         FirmwareName: "hdhomerun3_atsc",
         FirmwareVersion: "20240101",
-        DeviceID: DEVICE_ID, // "12345678",
+        DeviceID: CONST.DEVICE_ID, // "12345678",
         DeviceAuth: "tabloauth123",
-        BaseURL: SERVER_URL,// SERVER_URL,
-        LocalIP: SERVER_URL,// SERVER_URL,
-        LineupURL: `${SERVER_URL}/lineup.json`, // `${SERVER_URL}/lineup.json`
+        BaseURL: CONST.SERVER_URL,// SERVER_URL,
+        LocalIP: CONST.SERVER_URL,// SERVER_URL,
+        LineupURL: `${CONST.SERVER_URL}/lineup.json`, // `${SERVER_URL}/lineup.json`
         TunerCount: TUNER_COUNT // TUNER_COUNT
     }
 };
@@ -590,9 +575,9 @@ async function reqCreds() {
     var path;
 
     do {
-        const user = USER_NAME != undefined ? USER_NAME : await input("What is your email?");
+        const user = CONST.USER_NAME != undefined ? CONST.USER_NAME : await input("What is your email?");
 
-        const pass = USER_PASS != undefined ? USER_PASS : await input("What is your password?", true);
+        const pass = CONST.USER_PASS != undefined ? CONST.USER_PASS : await input("What is your password?", true);
 
         const credsData = {
             password: pass,
@@ -697,7 +682,7 @@ async function reqCreds() {
                         );
                     }
 
-                    if (AUTO_PROFILE) {
+                    if (CONST.AUTO_PROFILE) {
                         const profile = deviceData.profiles[0];
 
                         masterCreds.profile = profile;
@@ -729,8 +714,8 @@ async function reqCreds() {
                     selectedDevice = true;
                 } else {
                     // lets select which device we want to use
-                    if (TABLO_DEVICE) {
-                        const device = deviceData.devices.find((/**@type {{serverId:string}}*/el) => el.serverId == TABLO_DEVICE);
+                    if (CONST.TABLO_DEVICE) {
+                        const device = deviceData.devices.find((/**@type {{serverId:string}}*/el) => el.serverId == CONST.TABLO_DEVICE);
 
                         if (device) {
                             masterCreds.device = device;
@@ -739,7 +724,7 @@ async function reqCreds() {
 
                             selectedDevice = true;
                         } else {
-                            Logger.error(`Device with serverId ${TABLO_DEVICE} not found.`);
+                            Logger.error(`Device with serverId ${CONST.TABLO_DEVICE} not found.`);
 
                             Logger.warn("Falling back to manual selection.");
                         }
@@ -855,7 +840,7 @@ async function reqCreds() {
 
     const encryCreds = Encryption.crypt(JSON.stringify(masterCreds));
 
-    FS.writeFile(encryCreds, CREDS_FILE);
+    FS.writeFile(encryCreds, CONST.CREDS_FILE);
 
     Logger.info(`Credentials successfully encrypted! Ready to use the server!`);
 
@@ -867,7 +852,7 @@ async function reqCreds() {
  */
 async function readCreds() {
     if (CREDS_DATA.UUID == undefined) {
-        const masterCreds = FS.readFile(CREDS_FILE);
+        const masterCreds = FS.readFile(CONST.CREDS_FILE);
 
         const encryCreds = Encryption.decrypt(masterCreds);
 
@@ -875,7 +860,7 @@ async function readCreds() {
             try {
                 Logger.error("Issue decrypting creds file. Removing creds file. Please start app again or use --creds command line to create a new file.");
 
-                fs.unlinkSync(CREDS_FILE);
+                fs.unlinkSync(CONST.CREDS_FILE);
 
                 return await exit();
             } catch (error) {
@@ -892,7 +877,7 @@ async function readCreds() {
             try {
                 Logger.error("Issue reading decrypted creds file, Removing creds file. Please start app again or use --creds command line to create a new file.");
 
-                fs.unlinkSync(CREDS_FILE);
+                fs.unlinkSync(CONST.CREDS_FILE);
                 return await exit();
             } catch (error) {
                 Logger.error("Issue reading creds file, could not delete bad file. Your app may have read write issues. Please check your folder settings and start the app again or use --creds command line to create a new file.");
@@ -912,7 +897,7 @@ async function readCreds() {
  */
 async function parseGuideData(lineUp) {
     try {
-        const guideDays = JSDate.getDaysFromToday(GUIDE_DAYS);
+        const guideDays = JSDate.getDaysFromToday(CONST.GUIDE_DAYS);
 
         const xw = new XMLWriter(true);
 
@@ -920,12 +905,12 @@ async function parseGuideData(lineUp) {
 
         xw.startElement('tv');
 
-        xw.writeAttribute('generator-info-name', NAME);
+        xw.writeAttribute('generator-info-name', CONST.NAME);
 
         for (let i = 0; i < lineUp.length; i++) {
             const el = lineUp[i];
 
-            if(INCLUDE_OTT == false && el.kind == "ott"){
+            if(CONST.INCLUDE_OTT == false && el.kind == "ott"){
                 continue;
             }
 
@@ -990,7 +975,7 @@ async function parseGuideData(lineUp) {
 
                 const fileNameTD = el.identifier + "_" + guideDay + ".json";
 
-                const fileTD = path.join(DIR_NAME, "tempGuide", fileNameTD);
+                const fileTD = path.join(CONST.DIR_NAME, "tempGuide", fileNameTD);
 
                 /**
                  * @type {guideInfo[]}
@@ -1158,9 +1143,9 @@ async function parseGuideData(lineUp) {
             }
         }
 
-        if (INCLUDE_PSEUDOTV_GUIDE) {
-            if (FS.fileExists(path.join(DIR_NAME, "/.pseudotv/xmltv.xml"))) {
-                const personal = FS.readFile(path.join(DIR_NAME, "/.pseudotv/xmltv.xml"));
+        if (CONST.INCLUDE_PSEUDOTV_GUIDE) {
+            if (FS.fileExists(path.join(CONST.DIR_NAME, "/.pseudotv/xmltv.xml"))) {
+                const personal = FS.readFile(path.join(CONST.DIR_NAME, "/.pseudotv/xmltv.xml"));
 
                 const lines = personal.toString().split('\n');
 
@@ -1189,13 +1174,13 @@ async function parseGuideData(lineUp) {
  * Downloads guide files 
  */
 async function cacheGuideData() {
-    const tempFolder = path.join(DIR_NAME, "tempGuide");
+    const tempFolder = path.join(CONST.DIR_NAME, "tempGuide");
 
     if (!FS.directoryExists(tempFolder)) {
         FS.createDirectory(tempFolder);
     }
 
-    const guideDays = JSDate.getDaysFromToday(GUIDE_DAYS);
+    const guideDays = JSDate.getDaysFromToday(CONST.GUIDE_DAYS);
 
     const host = `lighthousetv.ewscloud.com`;
 
@@ -1208,7 +1193,7 @@ async function cacheGuideData() {
 
     const neededFiles = [];
 
-    const totalFiles = lineup.length * GUIDE_DAYS;
+    const totalFiles = lineup.length * CONST.GUIDE_DAYS;
 
     var currentFile = 0;
 
@@ -1348,7 +1333,7 @@ async function parseLineup(lineup = undefined) {
             if (el.kind == "ota") {
                 var GuideNumber = `${el.ota.major}.${el.ota.minor}`;
 
-                if(CREATE_XML){
+                if(CONST.CREATE_XML){
                     GuideNumber = `${el.ota.major}${el.ota.minor}1`;
                 }
 
@@ -1357,7 +1342,7 @@ async function parseLineup(lineup = undefined) {
                     GuideName: el.ota.network,
                     ImageURL: ImageURL,
                     Affiliate: el.ota.callSign,
-                    URL: `${SERVER_URL}/channel/${el.identifier}`,
+                    URL: `${CONST.SERVER_URL}/channel/${el.identifier}`,
                     type: "ota",
                     streamUrl: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`,
                     srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`
@@ -1365,17 +1350,17 @@ async function parseLineup(lineup = undefined) {
             } else if (el.kind == "ott") {
                 var GuideNumber = `${el.ott.major}.${el.ott.minor}`;
 
-                if(CREATE_XML){
+                if(CONST.CREATE_XML){
                     GuideNumber = `${el.ott.major}${el.ott.minor}1`;
                 }
 
-                if(INCLUDE_OTT){
+                if(CONST.INCLUDE_OTT){
                     LINEUP_DATA[el.identifier] = {
                         GuideNumber: GuideNumber,
                         GuideName: el.ott.network,
                         ImageURL: ImageURL,
                         Affiliate: el.ott.callSign,
-                        URL: `${SERVER_URL}/channel/${el.identifier}`,
+                        URL: `${CONST.SERVER_URL}/channel/${el.identifier}`,
                         type: "ott",
                         streamUrl: el.ott.streamUrl,
                         srcURL: `${CREDS_DATA.device.url}/guide/channels/${el.identifier}/watch`,
@@ -1426,7 +1411,7 @@ async function makeLineup() {
          */
         var lineupParse = JSON.parse(retData);
 
-        if(INCLUDE_OTT == false){
+        if(CONST.INCLUDE_OTT == false){
             var newlineupParse = [];
             for (let i = 0; i < lineupParse.length; i++) {
                 const el = lineupParse[i];

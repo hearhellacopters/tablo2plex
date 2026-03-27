@@ -34,4 +34,4 @@ ENV NAME="Tablo 4th Gen Proxy" \
     GUIDE_UPDATE_INTERVAL=24 \
     INCLUDE_OTT="true"
 
-CMD node app.js --name $NAME --id $DEVICE_ID --interval $LINEUP_UPDATE_INTERVAL --xml $CREATE_XML --days $GUIDE_DAYS --pseudo $INCLUDE_PSEUDOTV_GUIDE --level $LOG_LEVEL --log $SAVE_LOG --outdir /output --user $USER_NAME --pass $USER_PASS --guide $GUIDE_UPDATE_INTERVAL --ott $INCLUDE_OTT
+CMD node app.js --name $NAME --id $DEVICE_ID --channels $LINEUP_UPDATE_INTERVAL --xml $CREATE_XML --days $GUIDE_DAYS --pseudo $INCLUDE_PSEUDOTV_GUIDE --level $LOG_LEVEL --log $SAVE_LOG --outdir /output --user $USER_NAME --pass $USER_PASS --guide $GUIDE_UPDATE_INTERVAL --ott $INCLUDE_OTT

@@ -5,13 +5,7 @@ const {
 } = require('./src/CommandLine');
 const {
     C_HEX,
-    ARGV,
-    LINEUP_UPDATE_INTERVAL,
-    CREATE_XML,
-    SCHEDULE_LINEUP,
-    SCHEDULE_GUIDE,
-    GUIDE_UPDATE_INTERVAL,
-    CREDS_FILE,
+    CONST
 } = require('./src/Constants');
 const {
     reqCreds,
@@ -37,12 +31,14 @@ var GUIDE_SCHEDULER;
 
 // Starts server
 (async function () {
-    if (ARGV.lineup) {
+    CONST.init();
+    
+    if (CONST.ARGV.lineup) {
         // rerun line pull
         // creates new Scheduler file
         Logger.info(`${C_HEX.yellow}Running forced one-time lineup/guide update...${C_HEX.reset}`);
 
-        if (!FS.fileExists(CREDS_FILE)) {
+        if (!FS.fileExists(CONST.CREDS_FILE)) {
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
 
@@ -51,12 +47,12 @@ var GUIDE_SCHEDULER;
             await reqCreds();
         }
 
-        LINEUP_SCHEDULER = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+        LINEUP_SCHEDULER = new Scheduler(CONST.SCHEDULE_LINEUP, "Update channel lineup", CONST.LINEUP_UPDATE_INTERVAL, makeLineup);
 
         await LINEUP_SCHEDULER.runTask();
 
-        if (CREATE_XML) {
-            GUIDE_SCHEDULER = new Scheduler(SCHEDULE_GUIDE, "Update guide data", GUIDE_UPDATE_INTERVAL, cacheGuideData);
+        if (CONST.CREATE_XML) {
+            GUIDE_SCHEDULER = new Scheduler(CONST.SCHEDULE_GUIDE, "Update guide data", CONST.GUIDE_UPDATE_INTERVAL, cacheGuideData);
 
             await GUIDE_SCHEDULER.runTask();
         }
@@ -64,13 +60,13 @@ var GUIDE_SCHEDULER;
         Logger.info(`${C_HEX.green}Forced update complete.${C_HEX.reset}`);
 
         await exit();
-    } else if (ARGV.creds) {
+    } else if (CONST.ARGV.creds) {
         // creds need setting up
         Logger.info(`${C_HEX.yellow}Running forced one-time credentials creation...${C_HEX.reset}`);
 
         Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
 
-        LINEUP_SCHEDULER = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+        LINEUP_SCHEDULER = new Scheduler(CONST.SCHEDULE_LINEUP, "Update channel lineup", CONST.LINEUP_UPDATE_INTERVAL, makeLineup);
 
         await LINEUP_SCHEDULER.runTask();
 
@@ -79,7 +75,7 @@ var GUIDE_SCHEDULER;
         await exit();
     } else {
         // Then run the server.
-        if (!FS.fileExists(CREDS_FILE)) {
+        if (!FS.fileExists(CONST.CREDS_FILE)) {
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
 
@@ -97,14 +93,14 @@ var GUIDE_SCHEDULER;
         try {
             await readCreds();
 
-            LINEUP_SCHEDULER = new Scheduler(SCHEDULE_LINEUP, "Update channel lineup", LINEUP_UPDATE_INTERVAL, makeLineup);
+            LINEUP_SCHEDULER = new Scheduler(CONST.SCHEDULE_LINEUP, "Update channel lineup", CONST.LINEUP_UPDATE_INTERVAL, makeLineup);
 
             await LINEUP_SCHEDULER.scheduleNextRun();
 
             await parseLineup();
 
-            if (CREATE_XML) {
-                GUIDE_SCHEDULER = new Scheduler(SCHEDULE_GUIDE, "Update guide data", GUIDE_UPDATE_INTERVAL, cacheGuideData);
+            if (CONST.CREATE_XML) {
+                GUIDE_SCHEDULER = new Scheduler(CONST.SCHEDULE_GUIDE, "Update guide data", CONST.GUIDE_UPDATE_INTERVAL, cacheGuideData);
 
                 await GUIDE_SCHEDULER.scheduleNextRun();
             }
