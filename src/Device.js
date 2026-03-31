@@ -608,7 +608,7 @@ async function reqCreds() {
                     Logger.info(`${C_HEX.blue}NOTE:${C_HEX.reset} While password was accepted, account is not verified.\nPlease check email to make sure your account is fully set up. There may be issues later.`);
                 }
                 if (loginCreds.token_type != undefined && loginCreds.access_token != undefined) {
-                    Logger.info(`Loggin was accepted!`);
+                    Logger.info(`Login was accepted!`);
 
                     loginCreds.Authorization = `${loginCreds.token_type} ${loginCreds.access_token}`;
 
@@ -616,15 +616,15 @@ async function reqCreds() {
                 }
             } else {
                 if (loginCreds.code) {
-                    Logger.error(`Loggin was not accepted: ${loginCreds.message}`);
+                    Logger.error(`Login was not accepted: ${loginCreds.message}`);
                 } else {
-                    Logger.error(`Loggin was not successful, try again later!`);
+                    Logger.error(`Login was not successful, try again later!`);
 
                     return await exit();
                 }
             }
         } catch (error) {
-            Logger.error(`Loggin was not accepted or had issues, try again!`);
+            Logger.error(`Login was not accepted or had issues, try again!`);
         }
     } while (!loggedIn);
     // we should have access_token and token_type by now
@@ -754,15 +754,15 @@ async function reqCreds() {
                 }
             } else {
                 if (deviceData.code) {
-                    Logger.error(`Account loggin was not accepted: ${deviceData.message}`);
+                    Logger.error(`Account login was not accepted: ${deviceData.message}`);
                 } else {
-                    Logger.error(`Account loggin was not successful, try again!`);
+                    Logger.error(`Account login was not successful, try again!`);
 
                     return await exit();
                 }
             }
         } catch (error) {
-            Logger.error(`Account loggin was not accepted or had issues, try again!`);
+            Logger.error(`Account login was not accepted or had issues, try again!`);
 
             return await exit();
         }
