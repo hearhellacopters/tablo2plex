@@ -593,10 +593,10 @@ async function reqCreds() {
         headers['Content-Type'] = 'application/json';
 
         headers['Accept'] = '*/*';
-
-        const retData = await makeHTTPSRequest("POST", host, path, headers, JSON.stringify(credsData));
-
+        
         try {
+            const retData = await makeHTTPSRequest("POST", host, path, headers, JSON.stringify(credsData));
+        
             loginCreds = JSON.parse(retData);
 
             if (loginCreds.code == undefined) {
@@ -641,9 +641,9 @@ async function reqCreds() {
     var deviceData;
 
     do {
-        const retData = await makeHTTPSRequest("GET", host, path, headers);
-
         try {
+            const retData = await makeHTTPSRequest("GET", host, path, headers);
+        
             deviceData = JSON.parse(retData);
 
             if (deviceData.identifier == undefined) {
@@ -782,9 +782,9 @@ async function reqCreds() {
             sid: masterCreds.device.serverId
         };
 
-        const retData = await makeHTTPSRequest("POST", host, path, headers, JSON.stringify(req));
-
         try {
+            const retData = await makeHTTPSRequest("POST", host, path, headers, JSON.stringify(req));
+
             lighthouseData = JSON.parse(retData);
 
             if (lighthouseData.token != undefined) {
