@@ -141,7 +141,7 @@ If everything goes right and the container starts, you should see files in your 
 [info] No creds file found. Lets log into your Tablo account.
 [info] NOTE: Your password and email are never stored, but are transmitted in plain text.
 Please make sure you are on a trusted network before you continue.
-[info] Loggin was accepted!
+[info] Login was accepted!
 [info] Using profile Profile 1
 [info] Using device Tablo SID_<sid> @ http://192.168.1.134:8887
 [info] Getting account token.
