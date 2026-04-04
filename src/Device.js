@@ -942,7 +942,7 @@ async function parseGuideData(lineUp) {
             var channelNum = "";
 
             if (el.kind == "ota") {
-                channelNum = `${el.ota.major}${el.ota.minor}1`;
+                channelNum = `${el.ota.major}.${el.ota.minor}`;
 
                 xw.writeAttribute('id', channelNum);
 
@@ -1356,7 +1356,7 @@ async function parseLineup(lineup = undefined) {
                 var GuideNumber = `${el.ota.major}.${el.ota.minor}`;
 
                 if(CONST.CREATE_XML){
-                    GuideNumber = `${el.ota.major}${el.ota.minor}1`;
+                    GuideNumber = `${el.ota.major}.${el.ota.minor}`;
                 }
 
                 LINEUP_DATA[el.identifier] = {
