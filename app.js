@@ -42,7 +42,9 @@ var GUIDE_SCHEDULER;
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
 
-            Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
+            Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.`);
+
+            Logger.info(`Please make sure you are on a trusted network before you continue.`);
 
             await reqCreds();
         }
@@ -64,7 +66,9 @@ var GUIDE_SCHEDULER;
         // creds need setting up
         Logger.info(`${C_HEX.yellow}Running forced one-time credentials creation...${C_HEX.reset}`);
 
-        Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
+        Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.`);
+        
+        Logger.info(`Please make sure you are on a trusted network before you continue.`);
 
         LINEUP_SCHEDULER = new Scheduler(CONST.SCHEDULE_LINEUP, "Update channel lineup", CONST.LINEUP_UPDATE_INTERVAL, makeLineup);
 
@@ -79,7 +83,9 @@ var GUIDE_SCHEDULER;
             // creds need setting up
             Logger.info(`No creds file found. Lets log into your Tablo account.`);
 
-            Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.\nPlease make sure you are on a trusted network before you continue.`);
+            Logger.info(`${C_HEX.red}NOTE:${C_HEX.reset} Your password and email are never stored, but are transmitted in plain text.`);
+            
+            Logger.info(`Please make sure you are on a trusted network before you continue.`);
 
             await reqCreds();
         }

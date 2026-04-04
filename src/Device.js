@@ -428,10 +428,10 @@ async function reqTabloDevice(method, host, path, UUID, params) {
  * @param {Request} req 
  * @param {Response} res 
  */
-async function _channel(req, res, ) {
+async function _channel(req, res) {
     const ip = req.ip || "";
 
-    const channelId = req.params.channelId;
+    const channelId = Array.isArray(req.params.channelId) ? req.params.channelId.join("") : req.params.channelId;
 
     const selectedChannel = LINEUP_DATA[channelId];
 
@@ -526,9 +526,9 @@ async function makeHTTPSRequest(method, hostname, path, headers, data = "", just
                 }
 
                 if (res.statusCode == undefined || (res.statusCode < 200 || res.statusCode > 299)){
-                    Logger.warn(`https://${hostname}${path} request failed with status code:`, res.statusCode);
+                    Logger.error(`https://${hostname}${path} request failed with status code:`, res.statusCode);
 
-                    Logger.warn('Error details:', dataIn);
+                    Logger.error('Error details:', dataIn);
 
                     reject("");
                 } else {
@@ -566,6 +566,10 @@ async function reqCreds() {
 
     var loggedIn = false;
 
+    var max_attempts = 10;
+
+    var attempts = 0;
+
     var loginCreds;
 
     const headers = {};
@@ -575,9 +579,11 @@ async function reqCreds() {
     var path;
 
     do {
-        const user = CONST.USER_NAME != undefined ? CONST.USER_NAME : await input("What is your email?");
+        attempts++;
 
-        const pass = CONST.USER_PASS != undefined ? CONST.USER_PASS : await input("What is your password?", true);
+        const user = CONST.USER_NAME != null ? CONST.USER_NAME : await input("What is your email?");
+
+        const pass = CONST.USER_PASS != null ? CONST.USER_PASS : await input("What is your password?", true);
 
         const credsData = {
             password: pass,
@@ -607,6 +613,7 @@ async function reqCreds() {
                 if (loginCreds.is_verified != true) {
                     Logger.info(`${C_HEX.blue}NOTE:${C_HEX.reset} While password was accepted, account is not verified.\nPlease check email to make sure your account is fully set up. There may be issues later.`);
                 }
+
                 if (loginCreds.token_type != undefined && loginCreds.access_token != undefined) {
                     Logger.info(`Login was accepted!`);
 
@@ -625,8 +632,18 @@ async function reqCreds() {
             }
         } catch (error) {
             Logger.error(`Login was not accepted or had issues, try again!`);
+
+            if(error != ""){
+                Logger.error(error);
+            }
         }
-    } while (!loggedIn);
+    } while (attempts != max_attempts);
+
+    if(!loggedIn && attempts == max_attempts){
+        Logger.error(`Reached max login attempts, try again later!`);
+
+        return await exit();
+    }
     // we should have access_token and token_type by now
     const lighthousetvAuthorization = loginCreds.Authorization;
 
@@ -764,6 +781,8 @@ async function reqCreds() {
         } catch (error) {
             Logger.error(`Account login was not accepted or had issues, try again!`);
 
+            Logger.error(error);
+
             return await exit();
         }
     } while (!selectedDevice);
@@ -800,6 +819,9 @@ async function reqCreds() {
             }
         } catch (error) {
             Logger.error(`Account token was not accepted or had issues, try again!`);
+
+            Logger.error(error);
+
             return await exit();
         }
     } while (!gotLighthouse);
