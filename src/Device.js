@@ -637,7 +637,7 @@ async function reqCreds() {
                 Logger.error(error);
             }
         }
-    } while (attempts != max_attempts);
+    } while (!loggedIn && attempts != max_attempts);
 
     if(!loggedIn && attempts == max_attempts){
         Logger.error(`Reached max login attempts, try again later!`);
