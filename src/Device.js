@@ -620,6 +620,8 @@ async function reqCreds() {
                     loginCreds.Authorization = `${loginCreds.token_type} ${loginCreds.access_token}`;
 
                     loggedIn = true;
+
+                    attempts = max_attempts;
                 }
             } else {
                 if (loginCreds.code) {
@@ -637,7 +639,7 @@ async function reqCreds() {
                 Logger.error(error);
             }
         }
-    } while (!loggedIn && attempts != max_attempts);
+    } while (attempts != max_attempts);
 
     if(!loggedIn && attempts == max_attempts){
         Logger.error(`Reached max login attempts, try again later!`);
