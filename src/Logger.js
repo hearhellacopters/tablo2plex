@@ -18,6 +18,8 @@ class _CustomLog {
     saveLog = false;
     logType = "info";
     logLevel = 0;
+    /** @type {fs.WriteStream|null} */
+    stream = null;
     /**
      * @param {boolean} saveLog
      * @param {string} dirName
@@ -37,6 +39,15 @@ class _CustomLog {
             }
 
             this.loc = path.join(dirName, `/logs/${JSDate.currentTime()}-${logType}.log`);
+
+            // One stream for the life of the process (a stream per line leaked fds -> EMFILE).
+            this.stream = fs.createWriteStream(this.loc, { flags: 'a' });
+
+            this.stream.on('error', (error) => {
+                console.error("Error writing to log file");
+
+                console.error(error);
+            });
         }
     }
 
@@ -59,23 +70,10 @@ class _CustomLog {
             message = message.message;
         }
 
-        if (this.saveLog) {
-            try {
-                const writeStream = fs.createWriteStream(this.loc, { flags: 'a' });
+        if (this.saveLog && this.stream) {
+            const regexRemove = /\x1b\[[0-9;]*[mG]/g;
 
-                const regexRemove = /\x1b\[[0-9;]*[mG]/g;
-                // Write the text to the file
-                writeStream.write(level.replace(regexRemove, '') + " " + message.replace(regexRemove, '') + '\n');
-                // Listen for the 'finish' event to know when the write operation is complete
-                writeStream.on('finish', () => {
-                    // Close the write stream
-                    writeStream.end();
-                });
-            } catch (error) {
-                console.error("Error writing to log file");
-
-                console.error(error);
-            }
+            this.stream.write(level.replace(regexRemove, '') + " " + message.replace(regexRemove, '') + '\n');
         }
 
         console.log(level, message); // Call console.log
